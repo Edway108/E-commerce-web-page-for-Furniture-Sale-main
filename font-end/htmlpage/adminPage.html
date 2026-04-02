@@ -5,328 +5,88 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Furnituree — Admin Dashboard</title>
-    <link rel="preconnect" href="https://fonts.googleapis.com" />
-    <link
-        href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;1,300;1,400&family=DM+Sans:wght@300;400;500&display=swap"
+
+    <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond&family=DM+Sans&display=swap"
         rel="stylesheet" />
-    <link rel="stylesheet" href="../style/styles.css">
+    <link rel="stylesheet" href="../style/base.css">
+    <link rel="stylesheet" href="../style/admin.css">
 </head>
 
-<body>
+<body class="admin-page">
 
     <!-- SIDEBAR -->
     <aside class="sidebar" id="sidebar">
-        <div class="sidebar-logo">
-            Furni<span>turee</span>
-        </div>
+        <div class="sidebar-logo">Furni<span>turee</span></div>
         <div class="sidebar-sub">Admin Panel</div>
 
         <nav class="sidebar-nav">
-            <!-- Dashboard -->
-            <div class="nav-item active" id="nav-dashboard" onclick="showSection('dashboard')">
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                    <rect x="3" y="3" width="7" height="7" />
-                    <rect x="14" y="3" width="7" height="7" />
-                    <rect x="3" y="14" width="7" height="7" />
-                    <rect x="14" y="14" width="7" height="7" />
-                </svg>
+
+            <div class="nav-item active" onclick="showSection('dashboard')">
                 Dashboard
             </div>
 
-            <!-- Products dropdown -->
+            <!-- PRODUCT -->
             <div class="nav-group">
-                <div class="nav-item nav-parent" id="nav-product-toggle"
-                    onclick="toggleDropdown('product-menu', 'nav-product-toggle')">
-                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                        <path d="M20 7H4a2 2 0 0 0-2 2v10a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2z" />
-                        <path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16" />
-                    </svg>
+                <div class="nav-item nav-parent" onclick="toggleDropdown('product-menu', this)">
                     Products
-                    <svg class="chevron" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor"
-                        stroke-width="2.5">
-                        <polyline points="6 9 12 15 18 9" />
-                    </svg>
+                    <span class="chevron">▼</span>
                 </div>
+
                 <div class="nav-dropdown" id="product-menu">
                     <div class="nav-child" onclick="showSection('product-list')">
-                        <span class="dot"></span> All Products
+                        • All Products
                     </div>
                     <div class="nav-child" onclick="openAddModal('product')">
-                        <span class="dot"></span> Add Product
+                        • Add Product
                     </div>
                 </div>
             </div>
 
-            <!-- Users dropdown -->
+            <!-- USER -->
             <div class="nav-group">
-                <div class="nav-item nav-parent" id="nav-user-toggle"
-                    onclick="toggleDropdown('user-menu', 'nav-user-toggle')">
-                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                        <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" />
-                        <circle cx="9" cy="7" r="4" />
-                        <path d="M23 21v-2a4 4 0 0 0-3-3.87" />
-                        <path d="M16 3.13a4 4 0 0 1 0 7.75" />
-                    </svg>
+                <div class="nav-item nav-parent" onclick="toggleDropdown('user-menu', this)">
                     Users
-                    <svg class="chevron" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor"
-                        stroke-width="2.5">
-                        <polyline points="6 9 12 15 18 9" />
-                    </svg>
+                    <span class="chevron">▼</span>
                 </div>
+
                 <div class="nav-dropdown" id="user-menu">
                     <div class="nav-child" onclick="showSection('user-list')">
-                        <span class="dot"></span> All Users
+                        • All Users
                     </div>
                     <div class="nav-child" onclick="openAddModal('user')">
-                        <span class="dot"></span> Add User
+                        • Add User
                     </div>
                 </div>
             </div>
-        </nav>
 
-        <div class="sidebar-footer">
-            <div class="avatar-mini">A</div>
-            <div>
-                <div class="sf-name">Admin</div>
-                <div class="sf-role">Super Admin</div>
-            </div>
-        </div>
+        </nav>
     </aside>
 
-    <!-- MAIN CONTENT -->
+    <!-- MAIN -->
     <main class="main-content">
 
-        <!-- TOP BAR -->
+        <!-- TOPBAR -->
         <header class="topbar">
-            <div class="topbar-left">
-                <button class="topbar-toggle"
-                    onclick="document.getElementById('sidebar').classList.toggle('collapsed')">
-                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                        <line x1="3" y1="12" x2="21" y2="12" />
-                        <line x1="3" y1="6" x2="21" y2="6" />
-                        <line x1="3" y1="18" x2="21" y2="18" />
-                    </svg>
-                </button>
-                <span class="topbar-title" id="page-title">Dashboard</span>
-            </div>
-            <div class="topbar-right">
-                <div class="search-bar">
-                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                        <circle cx="11" cy="11" r="8" />
-                        <line x1="21" y1="21" x2="16.65" y2="16.65" />
-                    </svg>
-                    <input type="text" id="search-input" placeholder="Search..." oninput="handleSearch(this.value)" />
-                </div>
-                <div class="avatar" onclick="document.getElementById('userDropdown').classList.toggle('show')">A</div>
-                <div class="user-dropdown" id="userDropdown">
-                    <div class="dropdown-item">Profile</div>
-                    <div class="dropdown-item">Settings</div>
-                    <div type="button" onclick="logout()" class="dropdown-item logout">Logout</div>
-                </div>
-            </div>
+            <button onclick="toggleSidebar()">☰</button>
+            <h2 id="page-title">Dashboard</h2>
         </header>
 
-        <!-- DASHBOARD SECTION -->
+        <!-- DASHBOARD -->
         <section class="section active" id="section-dashboard">
-            <div class="dash-hero">
-                <div>
-                    <h1 class="dash-title">Welcome back,<br /><em>Administrator</em></h1>
-                    <p class="dash-sub">Manage your furniture catalogue and customers from here.</p>
-                </div>
-            </div>
-            <div class="stat-grid">
-                <div class="stat-card" onclick="showSection('product-list')">
-                    <div class="stat-label">Total Products</div>
-                    <div class="stat-value" id="stat-products">—</div>
-                    <div class="stat-hint">Click to manage →</div>
-                </div>
-                <div class="stat-card" onclick="showSection('user-list')">
-                    <div class="stat-label">Total Users</div>
-                    <div class="stat-value" id="stat-users">—</div>
-                    <div class="stat-hint">Click to manage →</div>
-                </div>
-            </div>
+            <h1>Dashboard</h1>
         </section>
 
-        <!-- PRODUCTS SECTION -->
+        <!-- PRODUCT -->
         <section class="section" id="section-product-list">
-            <div class="section-header">
-                <div>
-                    <h2 class="section-heading">Products</h2>
-                    <p class="section-sub">Manage your furniture catalogue</p>
-                </div>
-                <button class="btn-add-main" onclick="openAddModal('product')">+ Add Product</button>
-            </div>
-
-            <div id="product-loading" class="loading">
-                <div class="spinner"></div> Loading products…
-            </div>
-            <div class="table-wrap" id="product-table-wrap" style="display:none">
-                <table class="data-table" id="product-table">
-                    <thead>
-                        <tr>
-                            <th>ID</th>
-                            <th>Image</th>
-                            <th>Name</th>
-                            <th>Price</th>
-                            <th>Qty</th>
-                            <th>Description</th>
-                            <th>Actions</th>
-                        </tr>
-                    </thead>
-                    <tbody id="product-tbody"></tbody>
-                </table>
-            </div>
-            <div class="empty" id="product-empty" style="display:none">
-                <h2>No Products Yet</h2>
-                <p>Add your first product to get started.</p>
-            </div>
+            <h1>Products</h1>
         </section>
 
-        <!-- USERS SECTION -->
+        <!-- USER -->
         <section class="section" id="section-user-list">
-            <div class="section-header">
-                <div>
-                    <h2 class="section-heading">Users</h2>
-                    <p class="section-sub">Manage registered users</p>
-                </div>
-                <button class="btn-add-main" onclick="openAddModal('user')">+ Add User</button>
-            </div>
-
-            <div id="user-loading" class="loading">
-                <div class="spinner"></div> Loading users…
-            </div>
-            <div class="table-wrap" id="user-table-wrap" style="display:none">
-                <table class="data-table" id="user-table">
-                    <thead>
-                        <tr>
-                            <th>ID</th>
-                            <th>Username</th>
-                            <th>Phone</th>
-                            <th>Address</th>
-                            <th>Role</th>
-                            <th>Actions</th>
-                        </tr>
-                    </thead>
-                    <tbody id="user-tbody"></tbody>
-                </table>
-            </div>
-            <div class="empty" id="user-empty" style="display:none">
-                <h2>No Users Yet</h2>
-                <p>Add your first user to get started.</p>
-            </div>
+            <h1>Users</h1>
         </section>
 
     </main>
-
-    <!-- ===== PRODUCT MODAL (ADD / EDIT) ===== -->
-    <div class="overlay" id="product-modal-overlay">
-        <div class="modal">
-            <div class="modal-header">
-                <div>
-                    <div class="modal-title" id="product-modal-title">Add Product</div>
-                    <div class="modal-subtitle">Fill in the product details below</div>
-                </div>
-                <button class="modal-close" onclick="closeModal('product-modal-overlay')">×</button>
-            </div>
-            <div class="modal-body">
-                <input type="hidden" id="product-id" />
-                <div class="form-row">
-                    <div class="field">
-                        <label>Product Name</label>
-                        <input type="text" id="product-name" placeholder="e.g. Oak Armchair" />
-                    </div>
-                    <div class="field">
-                        <label>Price (VND)</label>
-                        <input type="number" id="product-price" placeholder="e.g. 2500000" />
-                    </div>
-                </div>
-                <div class="form-row">
-                    <div class="field">
-                        <label>Quantity</label>
-                        <input type="number" id="product-qty" placeholder="e.g. 10" />
-                    </div>
-                    <div class="field">
-                        <label>Image URL</label>
-                        <input type="text" id="product-img" placeholder="https://..." />
-                    </div>
-                </div>
-                <div class="field">
-                    <label>Description</label>
-                    <textarea id="product-desc" placeholder="Product description…"></textarea>
-                </div>
-            </div>
-            <div class="modal-footer">
-                <button class="btn-cancel" onclick="closeModal('product-modal-overlay')">Cancel</button>
-                <button class="btn-save" onclick="saveProduct()">Save Product</button>
-            </div>
-        </div>
-    </div>
-
-    <!-- ===== USER MODAL (ADD / EDIT) ===== -->
-    <div class="overlay" id="user-modal-overlay">
-        <div class="modal">
-            <div class="modal-header">
-                <div>
-                    <div class="modal-title" id="user-modal-title">Add User</div>
-                    <div class="modal-subtitle">Fill in the user details below</div>
-                </div>
-                <button class="modal-close" onclick="closeModal('user-modal-overlay')">×</button>
-            </div>
-            <div class="modal-body">
-                <input type="hidden" id="user-id" />
-                <div class="form-row">
-                    <div class="field">
-                        <label>Username</label>
-                        <input type="text" id="user-name" placeholder="e.g. johndoe" />
-                    </div>
-                    <div class="field">
-                        <label>Password</label>
-                        <input type="password" id="user-pass" placeholder="••••••••" />
-                    </div>
-                </div>
-                <div class="form-row">
-                    <div class="field">
-                        <label>Phone Number</label>
-                        <input type="text" id="user-phone" placeholder="e.g. 0901234567" />
-                    </div>
-                    <div class="field">
-                        <label>Address</label>
-                        <input type="text" id="user-address" placeholder="e.g. 123 Lê Lợi, Q1" />
-                    </div>
-                </div>
-            </div>
-            <div class="modal-footer">
-                <button class="btn-cancel" onclick="closeModal('user-modal-overlay')">Cancel</button>
-                <button class="btn-save" onclick="saveUser()">Save User</button>
-            </div>
-        </div>
-    </div>
-
-    <!-- ===== DELETE CONFIRM MODAL ===== -->
-    <div class="overlay" id="delete-modal-overlay">
-        <div class="modal" style="max-width:420px">
-            <div class="confirm-box">
-                <svg width="44" height="44" viewBox="0 0 24 24" fill="none" stroke="#c0392b" stroke-width="1.5"
-                    style="margin-bottom:16px">
-                    <circle cx="12" cy="12" r="10" />
-                    <line x1="12" y1="8" x2="12" y2="12" />
-                    <line x1="12" y1="16" x2="12.01" y2="16" />
-                </svg>
-                <h3>Confirm Delete</h3>
-                <p id="delete-confirm-text">Are you sure you want to delete this item? This action cannot be undone.</p>
-                <div class="confirm-actions">
-                    <button class="btn-cancel" onclick="closeModal('delete-modal-overlay')">Cancel</button>
-                    <button class="btn-confirm-del" id="confirm-del-btn">Delete</button>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <!-- TOAST -->
-    <div class="toast" id="toast">
-        <span id="toast-msg">Done</span>
-    </div>
 
     <script src="../jsLogical/admin.js"></script>
 </body>
