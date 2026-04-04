@@ -24,17 +24,21 @@ async function checkAuth() {
 //to chat to the public room
 async function openChat() {
   if (!(await checkAuth())) return;
+  const token = localStorage.getItem("token") || ""; // ← lấy token
 
   window.location.href = "chatWebSocket.html";
   connect();
 }
 
 async function reload() {
+  const token = localStorage.getItem("token") || ""; // ← lấy token
+
   window.location.href = "mainPage.html";
 }
 // ── FETCH ALL (với auth) ──────────────────────────────────────
 async function fetchAll() {
   if (!(await checkAuth())) return;
+  const token = localStorage.getItem("token") || "";
 
   document.getElementById("loadingState").style.display = "flex";
   document.getElementById("grid").innerHTML = "";
@@ -128,6 +132,7 @@ function renderGrid(products) {
 // ── SAVE (với auth) ───────────────────────────────────────────
 async function handleSave() {
   if (!(await checkAuth())) return;
+  const token = localStorage.getItem("token") || "";
 
   const payload = {
     product_name: document.getElementById("fName").value,
@@ -141,14 +146,20 @@ async function handleSave() {
     if (!editId) {
       await fetch(`${API}/addproduct`, {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
         body: JSON.stringify(payload),
       });
       showToast("Product added successfully");
     } else {
       await fetch(`${API}/update/${editId}`, {
         method: "PUT",
-        headers: { "Content-Type": "application/json" },
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
         body: JSON.stringify(payload),
       });
       showToast("Product updated");
@@ -161,6 +172,8 @@ async function handleSave() {
 }
 //Seach in search Bar
 async function search() {
+  const token = localStorage.getItem("token") || "";
+
   document.getElementById("loadingState").style.display = "flex";
   document.getElementById("grid").innerHTML = "";
   document.getElementById("emptyState").style.display = "none";
@@ -193,10 +206,13 @@ async function search() {
 
 // ── DELETE (với auth) ─────────────────────────────────────────
 async function confirmDelete() {
+  const token = localStorage.getItem("token") || "";
+
   if (!(await checkAuth())) return;
   try {
     await fetch(`${API}/${deleteId}`, {
       method: "DELETE",
+      headers: { Authorization: `Bearer ${token}` },
     });
     showToast("Product removed");
     closeDeleteModal();

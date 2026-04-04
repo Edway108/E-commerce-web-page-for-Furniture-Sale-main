@@ -269,7 +269,52 @@
     color: var(--gold);
     margin-bottom: 6px;
 }
+.login-btn {
+    display: block;
+    width: 100%;
+    margin-top: 10px;
+    padding: 12px;
+    border-radius: 10px;
+    border: none;
+    background: linear-gradient(135deg, #3b82f6, #06b6d4);
+    color: white;
+    font-weight: bold;
+    font-family: 'DM Sans', sans-serif;
+    font-size: 14px;
+    cursor: pointer;
+    transition: transform 0.2s, opacity 0.2s;
+}
+.form-group {
+    display: flex;
+    align-items: center;
+    margin-bottom: 20px;
+}
 
+.form-group label {
+    width: 150px;
+    flex-shrink: 0;
+    color: #334155;
+    font-size: 14px;
+}
+
+.form-group input {
+    flex: 1;
+    padding: 10px;
+    border-radius: 8px;
+    border: 1px solid #cbd5e1;
+    background: rgba(255, 255, 255, 0.8);
+    outline: none;
+    font-family: 'DM Sans', sans-serif;
+    font-size: 14px;
+    transition: border-color 0.2s, box-shadow 0.2s;
+}
+
+.form-group input:focus {
+    border-color: #3b82f6;
+    box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.2);
+}
+
+/* ── Buttons ── */
 .card-name {
     font-family: 'Cormorant Garamond', serif;
     font-size: 22px;
