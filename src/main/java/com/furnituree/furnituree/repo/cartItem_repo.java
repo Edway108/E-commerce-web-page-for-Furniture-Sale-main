@@ -8,4 +8,6 @@ import com.furnituree.furnituree.model.Product;
 
 public interface cartItem_repo extends JpaRepository<CartItem, Long> {
     CartItem findByCartAndProduct(Cart cart, Product product);
+
+    CartItem findByCart(Cart cart);
 }

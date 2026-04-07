@@ -16,8 +16,16 @@ async function login() {
       localStorage.setItem("token", data.token);
       localStorage.setItem("user", data.token);
       localStorage.setItem("username", username);
+      localStorage.setItem("role", data.role);
 
-      window.location.href = "mainPage.html"; // Chuyển sang products
+      role = localStorage.getItem("role");
+      if (role === "admin") {
+        window.location.href = "adminPage.html";
+      } else {
+        window.location.href = "mainPage.html";
+      }
+
+      // console.log(data.token);
     } else {
       alert(data.message || "Login failed");
     }

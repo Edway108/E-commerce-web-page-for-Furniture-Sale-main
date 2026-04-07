@@ -17,26 +17,28 @@ public class CartItem {
     private Long cartItemId;
 
     @ManyToOne
-    @JoinColumn(name = "id")
+    @JoinColumn(name = "cart_id")
     @JsonIgnore
     private Cart cart;
 
     @ManyToOne
-    @JoinColumn(name = "cartId")
+    @JoinColumn(name = "product_id")
     private Product product;
 
     private long quantity;
     private double price;
 
+    // getters setters...
+
     /**
-     * @return Long return the CartItemId
+     * @return Long return the cartItemId
      */
     public Long getCartItemId() {
         return cartItemId;
     }
 
     /**
-     * @param CartItemId the CartItemId to set
+     * @param cartItemId the cartItemId to set
      */
     public void setCartItemId(Long cartItemId) {
         this.cartItemId = cartItemId;
@@ -71,7 +73,7 @@ public class CartItem {
     }
 
     /**
-     * @return Long return the quantity
+     * @return long return the quantity
      */
     public long getQuantity() {
         return quantity;

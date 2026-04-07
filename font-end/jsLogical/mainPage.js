@@ -39,6 +39,7 @@ async function reload() {
 async function fetchAll() {
   if (!(await checkAuth())) return;
   const token = localStorage.getItem("token") || "";
+  // console.log(localStorage.getItem("token"));
 
   document.getElementById("loadingState").style.display = "flex";
   document.getElementById("grid").innerHTML = "";
@@ -47,7 +48,6 @@ async function fetchAll() {
   try {
     const res = await fetch(`${API}/findall`, {
       method: "GET",
-      // ← QUAN TRỌNG: Gửi cookies/session
       headers: {
         Authorization: `Bearer ${localStorage.getItem("token") || ""}`, // Fallback JWT
       },
@@ -115,12 +115,10 @@ function renderGrid(products) {
                         <div class="card-qty">Qty: ${p.quantity}</div>
                     </div>
                     <div class="card-actions">
-                        <button class="btn-icon btn-edit" onclick='openEdit(${JSON.stringify(
+                        <button class="btn-icon btn-edit" onclick='addToCart(${JSON.stringify(
                           p
-                        )})'>Edit</button>
-                        <button class="btn-icon btn-delete" onclick='openDelete(${
-                          p.id
-                        }, "${p.product_name}")'>Remove</button>
+                        )})'>Add to Cart</button>
+                        
                     </div>
                 </div>
             </div>
@@ -170,6 +168,39 @@ async function handleSave() {
     showToast("Operation failed", "error");
   }
 }
+//add to Cart
+const CART_API = "http://127.0.0.1:8080/cart";
+
+async function addToCart(p) {
+  if (!(await checkAuth())) return;
+
+  const token = localStorage.getItem("token") || "";
+
+  const payload = {
+    productId: p.id,
+    productQuantity: 1,
+  };
+
+  try {
+    const res = await fetch(`${CART_API}/addcart`, {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${token}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(payload),
+    });
+
+    if (res.ok) {
+      showToast("Added to cart");
+    } else {
+      showToast("Add failed");
+    }
+  } catch {
+    showToast("Error");
+  }
+}
+
 //Seach in search Bar
 async function search() {
   const token = localStorage.getItem("token") || "";

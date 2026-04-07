@@ -8,23 +8,25 @@ import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 
-@Entity
+//this class is the definition for User class included User_Id; name ; role ; phonenumber; address
+@Entity // to declare that this is the table to sql
 public class User {
-    @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @Id // define that this one is the id and it is unique
+    @GeneratedValue(strategy = GenerationType.IDENTITY) // to make it count up when ever new user being created
     private Long User_Id;
 
-    @Column(unique = true)
+    @Column(unique = true) // also make the username is the unique value ; cause it is not int like id so
+                           // not make it increased by itself
     private String username;
 
-    @JsonProperty(access = JsonProperty.Access.WRITE_ONLY)
+    @JsonProperty(access = JsonProperty.Access.WRITE_ONLY) // guess it make this one unable to be change ?
     private String password;
 
-    private String role;
+    private String role;// would have been admin//user
 
-    private int phonenumber;
+    private int phonenumber;// incase want to make the forgetpass to trace back ( idea not BEING MADE )
 
-    private String address;
+    private String address;// to make the receipt to send out
 
     // getter and setter
 

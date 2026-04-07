@@ -31,6 +31,7 @@ async function checkAuth() {
 }
 async function connect() {
   if (!(await checkAuth())) return;
+  const token = localStorage.getItem("token") || "";
 
   username = localStorage.getItem("username");
 
@@ -50,6 +51,7 @@ async function connect() {
       "/app/chat.join",
       {},
       JSON.stringify({
+        Authorization: `Bearer ${token}`,
         sender: username,
         type: "JOIN",
       })

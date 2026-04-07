@@ -56,8 +56,8 @@ public class AuthController {
         if (encoder.matches(user.getPassword(), dbUser.getPassword())) {
 
             String token = JwtUtil.generateToken(user.getUsername());
-
-            return ResponseEntity.ok(Map.of("token", token));
+            String role = dbUser.getRole();
+            return ResponseEntity.ok(Map.of("token", token, "role", role));
         }
 
         return ResponseEntity.badRequest().body(Map.of("message", "Password is wrong"));

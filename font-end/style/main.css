@@ -758,6 +758,23 @@
     background: var(--danger);
     color: white;
 }
+.nav-links a:hover,
+.nav-links a.active {
+    color: var(--text);
+}
+
+.badge {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 18px;
+    height: 18px;
+    border-radius: 50%;
+    background: var(--accent);
+    color: #fdfdfd;
+    font-size: 0.68rem;
+    font-weight: 600;
+}
 
 @keyframes slideInRight {
     from { transform: translateX(40px); opacity: 0; }

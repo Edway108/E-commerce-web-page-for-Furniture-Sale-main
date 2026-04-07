@@ -107,7 +107,6 @@ public class cartController {
         String username = JwtUtil.extractUsername(token);
 
         User user = usRepo.findByUsername(username);
-        ;
 
         // Find the cart by user and cartId
         Cart cart = caRepo.findByUser(user);
@@ -115,8 +114,21 @@ public class cartController {
             throw new RuntimeException("Cart not found or unauthorized access");
         }
 
-        // Delete the cart
         caRepo.delete(cart);
     }
+
+    // @DeleteMapping("/item/{cartItemId}")
+    // public void deleteCartItem(@PathVariable Long cartItemId,
+    // @RequestHeader("Authorization") String header) {
+    // // Extract username from token
+    // String token = header.substring(7);
+    // String username = JwtUtil.extractUsername(token);
+    // User user = usRepo.findByUsername(username);
+
+    // // Find the cart by user and cartId
+    // CartItem cartItem = caitemRepo.findById(cartItemId)
+    // .orElseThrow(() -> new RuntimeException("CartItem not found"));
+
+    // caitemRepo.delete(cartItem);
 
 }

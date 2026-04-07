@@ -9,13 +9,18 @@ import jakarta.persistence.Id;
 @Entity
 public class Product {
 
+    // to make it count up automatically
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
+    // cause the name of this collumn used to be product_name so when i change it
+    // into productName have to do this so that jpa would work with sql to talk to
+    // product_name in data
     @Column(unique = true, name = "product_name")
     private String productName;
 
+    // all other product entities
     private double price;
     private Long quantity;
     private String description;
