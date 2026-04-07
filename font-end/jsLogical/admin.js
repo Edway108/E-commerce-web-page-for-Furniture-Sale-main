@@ -1,435 +1,546 @@
-/* =============================================================
-   app.js — Furnituree Admin Dashboard
-   Chỉnh BASE_URL theo địa chỉ Spring Boot của bạn
-============================================================= */
-
 const BASE_URL = "http://localhost:8080";
 
-/* ==================== SECTION ROUTING ==================== */
-function logout() {
-  localStorage.removeItem("user");
-  localStorage.clear;
-  window.location = "login.html";
+/* ================= SIDEBAR ================= */
+function toggleSidebar() {
+  document.getElementById("sidebar").classList.toggle("collapsed");
 }
 
+/* ================= DROPDOWN ================= */
+function toggleDropdown(id, el) {
+  const menu = document.getElementById(id);
+  menu.classList.toggle("open");
+  el.classList.toggle("open");
+}
+
+/* ================= SECTION ================= */
 function showSection(name) {
-  // hide all
   document
     .querySelectorAll(".section")
-    .forEach((s) => s.classList.remove("active"));
+    .forEach((sec) => sec.classList.remove("active"));
   document
     .querySelectorAll(".nav-item")
-    .forEach((i) => i.classList.remove("active"));
-
-  document.getElementById("section-" + name).classList.add("active");
-  document.getElementById("page-title").textContent = capitalize(
-    name.replace("-", " ")
-  );
-
-  // clear search
-  document.getElementById("search-input").value = "";
+    .forEach((item) => item.classList.remove("active"));
+  document.getElementById(`section-${name}`).classList.add("active");
+  document.getElementById("page-title").innerText = name
+    .replace("-", " ")
+    .toUpperCase();
 
   if (name === "dashboard") loadDashboard();
   if (name === "product-list") loadProducts();
   if (name === "user-list") loadUsers();
 }
 
-function capitalize(str) {
-  return str
-    .split(" ")
-    .map((w) => w.charAt(0).toUpperCase() + w.slice(1))
-    .join(" ");
-}
+/* ================= MODAL ENGINE ================= */
 
-/* ==================== SIDEBAR DROPDOWN ==================== */
-
-function toggleDropdown(menuId, toggleId) {
-  const menu = document.getElementById(menuId);
-  const toggle = document.getElementById(toggleId);
-
-  const isOpen = menu.classList.contains("open");
-
-  // close all other dropdowns first
-  document
-    .querySelectorAll(".nav-dropdown.open")
-    .forEach((m) => m.classList.remove("open"));
-  document
-    .querySelectorAll(".nav-parent.open")
-    .forEach((t) => t.classList.remove("open"));
-
-  if (!isOpen) {
-    menu.classList.add("open");
-    toggle.classList.add("open");
-  }
-}
-
-/* ==================== DASHBOARD ==================== */
-
-async function loadDashboard() {
-  try {
-    const [products, users] = await Promise.all([
-      fetch(`${BASE_URL}/products/findall`).then((r) => r.json()),
-      fetch(`${BASE_URL}/users/findall`).then((r) => r.json()),
-    ]);
-    document.getElementById("stat-products").textContent = products.length;
-    document.getElementById("stat-users").textContent = users.length;
-  } catch (e) {
-    document.getElementById("stat-products").textContent = "—";
-    document.getElementById("stat-users").textContent = "—";
-  }
-}
-
-/* ==================== PRODUCTS ==================== */
-
-async function loadProducts(keyword = "") {
-  const loading = document.getElementById("product-loading");
-  const tableWrap = document.getElementById("product-table-wrap");
-  const empty = document.getElementById("product-empty");
-  const tbody = document.getElementById("product-tbody");
-
-  loading.style.display = "flex";
-  tableWrap.style.display = "none";
-  empty.style.display = "none";
-
-  try {
-    const url = keyword
-      ? `${BASE_URL}/products/search?keyword=${encodeURIComponent(keyword)}`
-      : `${BASE_URL}/products/findall`;
-
-    const products = await fetch(url).then((r) => r.json());
-
-    loading.style.display = "none";
-
-    if (!products || products.length === 0) {
-      empty.style.display = "block";
-      return;
+/**
+ * Inject modal CSS once
+ */
+function injectModalStyles() {
+  if (document.getElementById("modal-styles")) return;
+  const style = document.createElement("style");
+  style.id = "modal-styles";
+  style.textContent = `
+    .modal-overlay {
+      position: fixed; inset: 0;
+      background: rgba(0,0,0,0.35);
+      display: flex; align-items: center; justify-content: center;
+      z-index: 999;
+      animation: mFadeIn 0.15s ease;
     }
+    @keyframes mFadeIn { from { opacity:0 } to { opacity:1 } }
+    .modal-box {
+      background: var(--white);
+      width: 420px; max-width: 90vw;
+      padding: 36px 32px;
+      border: 1px solid #e0d8cc;
+      animation: mSlideUp 0.18s ease;
+    }
+    @keyframes mSlideUp {
+      from { transform: translateY(10px); opacity:0 }
+      to   { transform: translateY(0);    opacity:1 }
+    }
+    .modal-title {
+      font-family: 'Cormorant Garamond', serif;
+      font-size: 28px; font-weight: 300;
+      color: var(--walnut);
+      margin-bottom: 24px;
+    }
+    .modal-field { margin-bottom: 16px; }
+    .modal-label {
+      display: block;
+      font-size: 10px; letter-spacing: 0.18em;
+      text-transform: uppercase;
+      color: var(--mist);
+      margin-bottom: 6px;
+    }
+    .modal-input {
+      width: 100%;
+      padding: 10px 12px;
+      border: 1px solid #e0d8cc;
+      background: var(--white);
+      font-size: 13px; color: var(--ink);
+      font-family: 'DM Sans', sans-serif;
+      outline: none;
+      transition: border-color 0.15s;
+    }
+    .modal-input:focus { border-color: var(--walnut); }
+    .modal-actions {
+      display: flex; gap: 10px;
+      margin-top: 24px;
+    }
+    .btn-modal-confirm {
+      flex: 1; padding: 11px;
+      background: var(--walnut); color: var(--white);
+      border: none; cursor: pointer;
+      font-size: 12px; letter-spacing: 0.08em;
+      text-transform: uppercase;
+      transition: background 0.2s;
+    }
+    .btn-modal-confirm:hover { background: var(--walnut-light); }
+    .btn-modal-cancel {
+      flex: 1; padding: 11px;
+      background: none; color: var(--walnut);
+      border: 1px solid #e0d8cc;
+      cursor: pointer;
+      font-size: 12px; letter-spacing: 0.08em;
+      text-transform: uppercase;
+      transition: background 0.2s;
+    }
+    .btn-modal-cancel:hover { background: var(--parchment); }
+  `;
+  document.head.appendChild(style);
+}
 
-    tbody.innerHTML = products
+/**
+ * Generic modal builder.
+ * @param {string} title - Modal heading
+ * @param {Array}  fields - [{ id, label, type?, placeholder?, value? }]
+ * @param {string} confirmLabel - Text on the confirm button
+ * @returns {Promise<Object|null>} - Object of { fieldId: value } or null if cancelled
+ */
+function openModal(title, fields, confirmLabel = "Save") {
+  injectModalStyles();
+
+  return new Promise((resolve) => {
+    const overlay = document.createElement("div");
+    overlay.className = "modal-overlay";
+
+    const fieldsHTML = fields
       .map(
-        (p) => `
-      <tr>
-        <td>${p.id}</td>
-        <td>
-          ${
-            p.img
-              ? `<img class="table-img" src="${p.img}" alt="${p.product_name}" onerror="this.style.display='none'">`
-              : `<div class="table-img-placeholder">
-                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
-               </div>`
-          }
-        </td>
-        <td><span class="table-name">${p.product_name || "—"}</span></td>
-        <td><span class="table-price">${
-          p.price ? Number(p.price).toLocaleString("vi-VN") + " ₫" : "—"
-        }</span></td>
-        <td>${p.quantity ?? "—"}</td>
-        <td><span class="table-desc" title="${p.description || ""}">${
-          p.description || "—"
-        }</span></td>
-        <td>
-          <div class="action-btns">
-            <button class="btn-icon btn-edit" onclick="openEditProduct(${
-              p.id
-            })">Edit</button>
-            <button class="btn-icon btn-delete" onclick="confirmDelete('product', ${
-              p.id
-            }, '${(p.product_name || "").replace(
-          /'/g,
-          "\\'"
-        )}')">Delete</button>
-          </div>
-        </td>
-      </tr>
+        (f) => `
+      <div class="modal-field">
+        <label class="modal-label" for="mf-${f.id}">${f.label}</label>
+        <input
+          class="modal-input"
+          id="mf-${f.id}"
+          type="${f.type || "text"}"
+          placeholder="${f.placeholder || ""}"
+          value="${f.value || ""}"
+        />
+      </div>
     `
       )
       .join("");
 
-    tableWrap.style.display = "block";
-  } catch (e) {
-    loading.style.display = "none";
-    showToast("Failed to load products", "error");
-  }
-}
+    overlay.innerHTML = `
+      <div class="modal-box">
+        <div class="modal-title">${title}</div>
+        ${fieldsHTML}
+        <div class="modal-actions">
+          <button class="btn-modal-cancel" id="modal-cancel">Cancel</button>
+          <button class="btn-modal-confirm" id="modal-confirm">${confirmLabel}</button>
+        </div>
+      </div>
+    `;
 
-async function openEditProduct(id) {
-  try {
-    const p = await fetch(`${BASE_URL}/products/${id}`).then((r) => r.json());
-    document.getElementById("product-modal-title").textContent = "Edit Product";
-    document.getElementById("product-id").value = p.id;
-    document.getElementById("product-name").value = p.product_name || "";
-    document.getElementById("product-price").value = p.price || "";
-    document.getElementById("product-qty").value = p.quantity || "";
-    document.getElementById("product-img").value = p.img || "";
-    document.getElementById("product-desc").value = p.description || "";
-    openModal("product-modal-overlay");
-  } catch (e) {
-    showToast("Could not load product", "error");
-  }
-}
+    document.body.appendChild(overlay);
 
-async function saveProduct() {
-  const id = document.getElementById("product-id").value;
-  const body = {
-    product_name: document.getElementById("product-name").value.trim(),
-    price: parseFloat(document.getElementById("product-price").value) || 0,
-    quantity: parseInt(document.getElementById("product-qty").value) || 0,
-    img: document.getElementById("product-img").value.trim(),
-    description: document.getElementById("product-desc").value.trim(),
-  };
+    // Focus first input
+    const firstInput = overlay.querySelector(".modal-input");
+    if (firstInput) firstInput.focus();
 
-  if (!body.product_name) {
-    showToast("Product name is required", "error");
-    return;
-  }
+    // Close on overlay click
+    overlay.addEventListener("click", (e) => {
+      if (e.target === overlay) close(null);
+    });
 
-  try {
-    if (id) {
-      await fetch(`${BASE_URL}/products/update/${id}`, {
-        method: "PUT",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(body),
+    overlay
+      .querySelector("#modal-cancel")
+      .addEventListener("click", () => close(null));
+
+    overlay.querySelector("#modal-confirm").addEventListener("click", () => {
+      const result = {};
+      fields.forEach((f) => {
+        result[f.id] = overlay.querySelector(`#mf-${f.id}`).value;
       });
-      showToast("Product updated ✓");
-    } else {
-      await fetch(`${BASE_URL}/products/addproduct`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(body),
-      });
-      showToast("Product added ✓");
+      close(result);
+    });
+
+    // Keyboard: Enter = confirm, Esc = cancel
+    overlay.addEventListener("keydown", (e) => {
+      if (e.key === "Enter") {
+        overlay.querySelector("#modal-confirm").click();
+      }
+      if (e.key === "Escape") close(null);
+    });
+
+    function close(data) {
+      overlay.remove();
+      resolve(data);
     }
-    closeModal("product-modal-overlay");
-    loadProducts();
-  } catch (e) {
-    showToast("Save failed", "error");
-  }
-}
-
-/* ==================== USERS ==================== */
-
-async function loadUsers() {
-  const loading = document.getElementById("user-loading");
-  const tableWrap = document.getElementById("user-table-wrap");
-  const empty = document.getElementById("user-empty");
-  const tbody = document.getElementById("user-tbody");
-
-  loading.style.display = "flex";
-  tableWrap.style.display = "none";
-  empty.style.display = "none";
-
-  try {
-    const users = await fetch(`${BASE_URL}/users/findall`).then((r) =>
-      r.json()
-    );
-
-    loading.style.display = "none";
-
-    if (!users || users.length === 0) {
-      empty.style.display = "block";
-      return;
-    }
-
-    tbody.innerHTML = users
-      .map(
-        (u) => `
-      <tr>
-        <td>${u.id}</td>
-        <td><span class="table-name">${u.username || "—"}</span></td>
-        <td>${u.phonenumber || "—"}</td>
-        <td>${u.address || "—"}</td>
-        <td><span class="badge ${u.role === "ADMIN" ? "admin" : ""}">${
-          u.role || "USER"
-        }</span></td>
-        <td>
-          <div class="action-btns">
-            <button class="btn-icon btn-edit" onclick="openEditUser(${
-              u.id
-            })">Edit</button>
-            <button class="btn-icon btn-delete" onclick="confirmDelete('user', ${
-              u.id
-            }, '${(u.username || "").replace(/'/g, "\\'")}')">Delete</button>
-          </div>
-        </td>
-      </tr>
-    `
-      )
-      .join("");
-
-    tableWrap.style.display = "block";
-  } catch (e) {
-    loading.style.display = "none";
-    showToast("Failed to load users", "error");
-  }
-}
-
-async function openEditUser(id) {
-  try {
-    // Spring Boot chưa có GET /users/{id}, dùng findall rồi filter
-    const users = await fetch(`${BASE_URL}/users/findall`).then((r) =>
-      r.json()
-    );
-    const u = users.find((x) => x.id === id);
-    if (!u) {
-      showToast("User not found", "error");
-      return;
-    }
-
-    document.getElementById("user-modal-title").textContent = "Edit User";
-    document.getElementById("user-id").value = u.id;
-    document.getElementById("user-name").value = u.username || "";
-    document.getElementById("user-pass").value = "";
-    document.getElementById("user-phone").value = u.phonenumber || "";
-    document.getElementById("user-address").value = u.address || "";
-    openModal("user-modal-overlay");
-  } catch (e) {
-    showToast("Could not load user", "error");
-  }
-}
-
-async function saveUser() {
-  const id = document.getElementById("user-id").value;
-  const body = {
-    username: document.getElementById("user-name").value.trim(),
-    password: document.getElementById("user-pass").value,
-    phonenumber: document.getElementById("user-phone").value.trim(),
-    address: document.getElementById("user-address").value.trim(),
-  };
-
-  if (!body.username) {
-    showToast("Username is required", "error");
-    return;
-  }
-
-  try {
-    if (id) {
-      await fetch(`${BASE_URL}/users/update/${id}`, {
-        method: "PUT",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(body),
-      });
-      showToast("User updated ✓");
-    } else {
-      await fetch(`${BASE_URL}/users/addUser`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(body),
-      });
-      showToast("User added ✓");
-    }
-    closeModal("user-modal-overlay");
-    loadUsers();
-  } catch (e) {
-    showToast("Save failed", "error");
-  }
-}
-
-/* ==================== DELETE ==================== */
-
-let _deleteCallback = null;
-
-function confirmDelete(type, id, name) {
-  const text = `Are you sure you want to delete "${name}"? This cannot be undone.`;
-  document.getElementById("delete-confirm-text").textContent = text;
-
-  const btn = document.getElementById("confirm-del-btn");
-  btn.onclick = async () => {
-    try {
-      const endpoint =
-        type === "product"
-          ? `${BASE_URL}/products/${id}`
-          : `${BASE_URL}/users/${id}`;
-
-      await fetch(endpoint, { method: "DELETE" });
-      showToast(`${capitalize(type)} deleted`);
-      closeModal("delete-modal-overlay");
-      if (type === "product") loadProducts();
-      else loadUsers();
-    } catch (e) {
-      showToast("Delete failed", "error");
-    }
-  };
-
-  openModal("delete-modal-overlay");
-}
-
-/* ==================== SEARCH ==================== */
-
-let _searchTimer = null;
-
-function handleSearch(value) {
-  // only search when product-list section is active
-  const productActive = document
-    .getElementById("section-product-list")
-    .classList.contains("active");
-  if (!productActive) return;
-
-  clearTimeout(_searchTimer);
-  _searchTimer = setTimeout(() => loadProducts(value), 350);
-}
-
-/* ==================== MODAL HELPERS ==================== */
-
-function openModal(id) {
-  document.getElementById(id).classList.add("active");
-}
-
-function closeModal(id) {
-  document.getElementById(id).classList.remove("active");
-}
-
-function openAddModal(type) {
-  if (type === "product") {
-    document.getElementById("product-modal-title").textContent = "Add Product";
-    document.getElementById("product-id").value = "";
-    document.getElementById("product-name").value = "";
-    document.getElementById("product-price").value = "";
-    document.getElementById("product-qty").value = "";
-    document.getElementById("product-img").value = "";
-    document.getElementById("product-desc").value = "";
-    openModal("product-modal-overlay");
-  } else {
-    document.getElementById("user-modal-title").textContent = "Add User";
-    document.getElementById("user-id").value = "";
-    document.getElementById("user-name").value = "";
-    document.getElementById("user-pass").value = "";
-    document.getElementById("user-phone").value = "";
-    document.getElementById("user-address").value = "";
-    openModal("user-modal-overlay");
-  }
-}
-
-/* ==================== TOAST ==================== */
-
-let _toastTimer = null;
-
-function showToast(msg, type = "success") {
-  const toast = document.getElementById("toast");
-  document.getElementById("toast-msg").textContent = msg;
-  toast.className = `toast show ${type}`;
-  clearTimeout(_toastTimer);
-  _toastTimer = setTimeout(() => toast.classList.remove("show"), 3000);
-}
-
-/* ==================== CLOSE OVERLAY ON CLICK OUTSIDE ==================== */
-
-document.querySelectorAll(".overlay").forEach((overlay) => {
-  overlay.addEventListener("click", function (e) {
-    if (e.target === this) closeModal(this.id);
   });
-});
+}
 
-// Close user topbar dropdown when clicking outside
-document.addEventListener("click", function (e) {
-  const dropdown = document.getElementById("userDropdown");
-  if (!dropdown) return;
-  if (!e.target.closest(".user-menu") && !e.target.closest(".avatar")) {
-    dropdown.classList.remove("show");
+/* ================= DASHBOARD ================= */
+async function loadDashboard() {
+  const [prodRes, userRes] = await Promise.all([
+    fetch(`${BASE_URL}/products/findall`),
+    fetch(`${BASE_URL}/users/findall`),
+  ]);
+  const products = await prodRes.json();
+  const users = await userRes.json();
+
+  const totalProducts = products.length;
+  const totalUsers = users.length;
+  const totalStock = products.reduce(
+    (s, p) => s + (Number(p.quantity) || 0),
+    0
+  );
+  const outOfStock = products.filter((p) => Number(p.quantity) === 0).length;
+
+  // 5 most recent products (last in array = newest by ID)
+  const recent = [...products].reverse().slice(0, 5);
+
+  const section = document.getElementById("section-dashboard");
+  section.innerHTML = `
+    <h1>Dashboard</h1>
+
+    <div class="stat-grid">
+      <div class="stat-card">
+        <div class="stat-label">Total Products</div>
+        <div class="stat-value">${totalProducts}</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label">Total Users</div>
+        <div class="stat-value">${totalUsers}</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label">Items in Stock</div>
+        <div class="stat-value">${totalStock.toLocaleString()}</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label">Out of Stock</div>
+        <div class="stat-value" style="color:var(--danger)">${outOfStock}</div>
+      </div>
+    </div>
+
+    <h2 style="font-family:'Cormorant Garamond',serif;font-size:24px;font-weight:300;color:var(--walnut);margin-bottom:16px;">
+      Recent Products
+    </h2>
+    <table class="data-table">
+      <thead>
+        <tr>
+          <th style="width:68px">Image</th>
+          <th>Name</th>
+          <th>Price</th>
+          <th>Quantity</th>
+        </tr>
+      </thead>
+      <tbody>
+        ${recent
+          .map(
+            (p) => `
+          <tr>
+            <td>
+              ${
+                p.img
+                  ? `<img src="${p.img}" alt="${p.productName}"
+                      style="width:48px;height:48px;object-fit:cover;border:1px solid #e0d8cc;display:block;"
+                      onerror="this.replaceWith(noImg())" />`
+                  : `<div style="width:48px;height:48px;background:var(--parchment);border:1px solid #e0d8cc;"></div>`
+              }
+            </td>
+            <td>${p.productName}</td>
+            <td>${p.price.toLocaleString()}</td>
+            <td>${p.quantity}</td>
+          </tr>
+        `
+          )
+          .join("")}
+      </tbody>
+    </table>
+  `;
+}
+
+/* ================= LOAD PRODUCTS ================= */
+async function loadProducts() {
+  const res = await fetch(`${BASE_URL}/products/findall`);
+  const data = await res.json();
+
+  const section = document.getElementById("section-product-list");
+
+  let html = `
+    <h1>Products</h1>
+    <button class="btn-add" onclick="openAddModal('product')">+ Add Product</button>
+    <table class="data-table">
+      <thead>
+        <tr>
+          <th style="width:72px">Image</th>
+          <th>ID</th>
+          <th>Name</th>
+          <th>Price</th>
+          <th>Quantity</th>
+          <th>Action</th>
+        </tr>
+      </thead>
+      <tbody>
+  `;
+
+  data.forEach((p) => {
+    const imgCell = p.img
+      ? `<img src="${p.img}" alt="${p.productName}"
+            style="width:52px;height:52px;object-fit:cover;border:1px solid #e0d8cc;display:block;"
+            onerror="this.replaceWith(noImg())" />`
+      : `<div style="width:52px;height:52px;background:var(--parchment);border:1px solid #e0d8cc;"></div>`;
+
+    html += `
+      <tr>
+        <td>${imgCell}</td>
+        <td>${p.id}</td>
+        <td>${p.productName}</td>
+        <td>${p.price}</td>
+        <td>${p.quantity}</td>
+        <td>
+          <button onclick="editProduct(${p.id})">Edit</button>
+          <button onclick="deleteProduct(${p.id})">Delete</button>
+        </td>
+      </tr>
+    `;
+  });
+
+  html += `</tbody></table>`;
+  section.innerHTML = html;
+}
+
+function noImg() {
+  const d = document.createElement("div");
+  d.style.cssText =
+    "width:52px;height:52px;background:var(--parchment);border:1px solid #e0d8cc;";
+  return d;
+}
+
+/* ================= DELETE PRODUCT ================= */
+async function deleteProduct(id) {
+  if (!(await confirmModal("Are you sure you want to delete this product?")))
+    return;
+  await fetch(`${BASE_URL}/products/${id}`, { method: "DELETE" });
+  loadProducts();
+}
+
+/**
+ * Lightweight confirm-only modal (no input fields).
+ */
+function confirmModal(message) {
+  injectModalStyles();
+  return new Promise((resolve) => {
+    const overlay = document.createElement("div");
+    overlay.className = "modal-overlay";
+    overlay.innerHTML = `
+      <div class="modal-box">
+        <div class="modal-title" style="font-size:22px">Confirm</div>
+        <p style="font-size:14px;color:var(--ink);margin-bottom:0">${message}</p>
+        <div class="modal-actions">
+          <button class="btn-modal-cancel" id="modal-cancel">Cancel</button>
+          <button class="btn-modal-confirm" id="modal-confirm" style="background:var(--danger)">Delete</button>
+        </div>
+      </div>
+    `;
+    document.body.appendChild(overlay);
+    overlay.querySelector("#modal-cancel").addEventListener("click", () => {
+      overlay.remove();
+      resolve(false);
+    });
+    overlay.querySelector("#modal-confirm").addEventListener("click", () => {
+      overlay.remove();
+      resolve(true);
+    });
+    overlay.addEventListener("keydown", (e) => {
+      if (e.key === "Escape") {
+        overlay.remove();
+        resolve(false);
+      }
+    });
+  });
+}
+
+/* ================= EDIT PRODUCT ================= */
+async function editProduct(id) {
+  const res = await fetch(`${BASE_URL}/products/${id}`);
+  const p = await res.json();
+
+  const data = await openModal(
+    "Edit Product",
+    [
+      { id: "product_name", label: "Name", value: p.productName },
+      { id: "price", label: "Price", value: p.price, type: "number" },
+      { id: "quantity", label: "Quantity", value: p.quantity, type: "number" },
+      { id: "description", label: "Description", value: p.description },
+      {
+        id: "img",
+        label: "Image URL",
+        value: p.img,
+        placeholder: "https://...",
+      },
+    ],
+    "Save Changes"
+  );
+
+  if (!data) return;
+
+  await fetch(`${BASE_URL}/products/update/${id}`, {
+    method: "PUT",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      product_name: data.product_name,
+      price: data.price,
+      quantity: data.quantity,
+      description: data.description,
+      img: data.img,
+    }),
+  });
+
+  loadProducts();
+}
+
+/* ================= LOAD USERS ================= */
+async function loadUsers() {
+  const res = await fetch(`${BASE_URL}/users/findall`);
+  const data = await res.json();
+
+  const section = document.getElementById("section-user-list");
+
+  let html = `
+    <h1>Users</h1>
+    <button class="btn-add" onclick="openAddModal('user')">+ Add User</button>
+    <table class="data-table">
+      <thead>
+        <tr>
+          <th>ID</th><th>Username</th><th>Phone</th><th>Action</th>
+        </tr>
+      </thead>
+      <tbody>
+  `;
+
+  data.forEach((u) => {
+    html += `
+      <tr>
+        <td>${u.userId}</td>
+        <td>${u.username}</td>
+        <td>${u.phonenumber || ""}</td>
+        <td>
+          <button onclick="editUser(${u.userId})">Edit</button>
+        </td>
+      </tr>
+    `;
+  });
+
+  html += `</tbody></table>`;
+  section.innerHTML = html;
+}
+
+/* ================= EDIT USER ================= */
+async function editUser(id) {
+  const data = await openModal(
+    "Edit User",
+    [
+      { id: "username", label: "Username" },
+      { id: "password", label: "Password", type: "password" },
+      { id: "phonenumber", label: "Phone", type: "tel" },
+      { id: "address", label: "Address" },
+    ],
+    "Save Changes"
+  );
+
+  if (!data) return;
+
+  await fetch(`${BASE_URL}/users/update/${id}`, {
+    method: "PUT",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(data),
+  });
+
+  loadUsers();
+}
+
+/* ================= ADD MODAL ================= */
+async function openAddModal(type) {
+  if (type === "product") {
+    const data = await openModal(
+      "Add Product",
+      [
+        {
+          id: "product_name",
+          label: "Product name",
+          placeholder: "e.g. Walnut Coffee Table",
+        },
+        { id: "price", label: "Price", type: "number", placeholder: "0.00" },
+        { id: "quantity", label: "Quantity", type: "number", placeholder: "0" },
+        {
+          id: "description",
+          label: "Description",
+          placeholder: "Short description...",
+        },
+        { id: "img", label: "Image URL", placeholder: "https://..." },
+      ],
+      "Add Product"
+    );
+
+    if (!data) return;
+
+    await fetch(`${BASE_URL}/products/addproduct`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        product_name: data.product_name,
+        price: data.price,
+        quantity: data.quantity,
+        description: data.description,
+        img: data.img,
+      }),
+    });
+
+    loadProducts();
   }
-});
 
-/* ==================== INIT ==================== */
+  if (type === "user") {
+    const data = await openModal(
+      "Add User",
+      [
+        { id: "username", label: "Username" },
+        { id: "password", label: "Password", type: "password" },
+        { id: "phonenumber", label: "Phone", type: "tel" },
+        { id: "address", label: "Address" },
+      ],
+      "Add User"
+    );
 
-document.addEventListener("DOMContentLoaded", () => {
+    if (!data) return;
+
+    await fetch(`${BASE_URL}/users/addUser`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(data),
+    });
+
+    loadUsers();
+  }
+}
+function logout() {
+  localStorage.removeItem("user");
+  localStorage.clear;
+  window.location = "login.html";
+}
+/* ================= INIT ================= */
+window.onload = () => {
   showSection("dashboard");
-});
+};
