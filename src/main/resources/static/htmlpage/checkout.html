@@ -1,0 +1,167 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Checkout — Furnituree</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@400;500;600&family=DM+Sans:wght@300;400;500;700&display=swap" rel="stylesheet" />
+    <link rel="stylesheet" href="../style/base.css">
+    <link rel="stylesheet" href="../style/checkout.css">
+    <link rel="icon" type="image/png" href="../style/logo.png">
+    <script src="../jsLogical/checkout.js" defer></script>
+</head>
+
+<body>
+    <header class="checkout-nav">
+        <a href="mainPage.html" class="brand">Furnituree</a>
+        <nav class="nav-links">
+            <a href="mainPage.html">Shop</a>
+            <a href="cart.html">Cart</a>
+            <a href="checkout.html" class="active">Checkout</a>
+        </nav>
+        <button class="btn-logout" type="button" onclick="logout()">Logout</button>
+    </header>
+
+    <section class="checkout-hero">
+        <div>
+            <p class="hero-label">Secure checkout</p>
+            <h1>Complete your order</h1>
+            <p class="hero-copy">Confirm your items, delivery information and payment method before placing the order.</p>
+        </div>
+        <div class="hero-card">
+            <span>Delivery support</span>
+            <strong>Furnituree Care</strong>
+            <small>We will contact you before shipping.</small>
+        </div>
+    </section>
+
+    <main class="checkout-layout">
+        <section class="checkout-form-card">
+            <div class="section-title">
+                <span>01</span>
+                <div>
+                    <h2>Delivery information</h2>
+                    <p>Fill in the information used for order confirmation and delivery.</p>
+                </div>
+            </div>
+
+            <div class="form-grid">
+                <div class="field full">
+                    <label for="shippingAddress">Shipping address</label>
+                    <input id="shippingAddress" type="text" placeholder="House number, street, district, city" />
+                    <small id="addressError"></small>
+                </div>
+
+                <div class="field">
+                    <label for="receiverName">Receiver name</label>
+                    <input id="receiverName" type="text" placeholder="Your full name" />
+                </div>
+
+                <div class="field">
+                    <label for="receiverPhone">Receiver phone</label>
+                    <input id="receiverPhone" type="text" placeholder="e.g. 0901234567" />
+                    <small id="phoneError"></small>
+                </div>
+
+                <div class="field">
+                    <label for="paymentMethod">Payment method</label>
+                    <select id="paymentMethod">
+                        <option value="COD">Cash on Delivery</option>
+                        <option value="BANK_TRANSFER">Bank Transfer</option>
+                        <option value="CARD">Card</option>
+                    </select>
+                </div>
+
+                <div class="field">
+                    <label for="deliveryTime">Preferred delivery</label>
+                    <select id="deliveryTime">
+                        <option value="Any time">Any time</option>
+                        <option value="Morning">Morning</option>
+                        <option value="Afternoon">Afternoon</option>
+                        <option value="Evening">Evening</option>
+                    </select>
+                </div>
+
+                <div class="field full">
+                    <label for="orderNote">Order note</label>
+                    <textarea id="orderNote" rows="4" placeholder="Optional note for delivery"></textarea>
+                </div>
+            </div>
+
+            <div class="form-actions">
+                <a href="cart.html" class="btn secondary">Back to cart</a>
+                <button type="button" id="placeOrderBtn" class="btn primary" onclick="submitCheckout()">Place order</button>
+            </div>
+        </section>
+
+        <aside class="order-summary-card">
+            <div class="section-title compact">
+                <span>02</span>
+                <div>
+                    <h2>Order summary</h2>
+                    <p id="summaryCount">Loading cart…</p>
+                </div>
+            </div>
+
+            <div id="checkoutLoading" class="loading-box">
+                <div class="spinner"></div>
+                <p>Loading your cart…</p>
+            </div>
+
+            <div id="checkoutEmpty" class="empty-box" style="display:none;">
+                <h3>Your cart is empty</h3>
+                <p>Please add products before checking out.</p>
+                <a href="mainPage.html" class="btn primary small">Browse products</a>
+            </div>
+
+            <div id="summaryItems" class="summary-items"></div>
+
+            <div class="summary-lines" id="summaryLines" style="display:none;">
+                <div class="summary-line">
+                    <span>Subtotal</span>
+                    <strong id="subtotal">$0.00</strong>
+                </div>
+                <div class="summary-line">
+                    <span>Discount</span>
+                    <strong id="discount">$0.00</strong>
+                </div>
+                <div class="summary-line">
+                    <span>Tax</span>
+                    <strong id="tax">$0.00</strong>
+                </div>
+                <div class="summary-line">
+                    <span>Shipping</span>
+                    <strong id="shipping">$0.00</strong>
+                </div>
+                <div class="summary-line total">
+                    <span>Total</span>
+                    <strong id="grandTotal">$0.00</strong>
+                </div>
+            </div>
+
+            <div class="secure-note">
+                <span>🔒</span>
+                <p>Your order will be stored securely and visible in the order management workflow.</p>
+            </div>
+        </aside>
+    </main>
+
+    <div id="successModal" class="modal-overlay" style="display:none;">
+        <div class="success-modal">
+            <div class="success-icon">✓</div>
+            <h2>Order placed successfully</h2>
+            <p id="successText">Your order has been created.</p>
+            <div class="success-actions">
+                <a href="mainPage.html" class="btn secondary">Continue shopping</a>
+                <a href="cart.html" class="btn primary">Back to cart</a>
+            </div>
+        </div>
+    </div>
+
+    <div id="toast" class="toast"></div>
+</body>
+
+</html>

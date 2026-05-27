@@ -1,3 +1,4 @@
+const API_ORIGIN = (window.location.port === "5500" || window.location.protocol === "file:") ? "http://localhost:8080" : "";
 let stompClient = null;
 let username = null;
 let counter = 1;
@@ -35,7 +36,7 @@ async function connect() {
 
   username = localStorage.getItem("username");
 
-  const socket = new SockJS("http://127.0.0.1:8080/ws");
+  const socket = new SockJS(`${API_ORIGIN}/ws`);
   stompClient = Stomp.over(socket);
 
   stompClient.connect({}, function () {

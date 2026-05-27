@@ -1,4 +1,20 @@
-const BASE_URL = "http://localhost:8080";
+const API_ORIGIN = (window.location.port === "5500" || window.location.protocol === "file:")
+  ? "http://localhost:8080"
+  : "";
+
+async function readJsonSafely(response) {
+  const text = await response.text();
+  if (!text) return {};
+  try {
+    return JSON.parse(text);
+  } catch (error) {
+    throw new Error(`Server returned non-JSON response (${response.status}). ${text.slice(0, 120)}`);
+  }
+}
+
+const BASE_URL = API_ORIGIN;
+function authHeaders() { return { "Content-Type": "application/json", Authorization: `Bearer ${localStorage.getItem("token") || ""}` }; }
+function requireAdmin() { const role = (localStorage.getItem("role") || "").toUpperCase(); if (!["ADMIN", "MANAGER"].includes(role)) { alert("Admin/Manager access required"); window.location.href = "login.html"; } }
 
 /* ================= SIDEBAR ================= */
 function toggleSidebar() {
@@ -194,8 +210,8 @@ function openModal(title, fields, confirmLabel = "Save") {
 /* ================= DASHBOARD ================= */
 async function loadDashboard() {
   const [prodRes, userRes] = await Promise.all([
-    fetch(`${BASE_URL}/products/findall`),
-    fetch(`${BASE_URL}/users/findall`),
+    fetch(`${BASE_URL}/products/findall`, { headers: authHeaders() }),
+    fetch(`${BASE_URL}/users/findall`, { headers: authHeaders() }),
   ]);
   const products = await prodRes.json();
   const users = await userRes.json();
@@ -274,8 +290,8 @@ async function loadDashboard() {
 
 /* ================= LOAD PRODUCTS ================= */
 async function loadProducts() {
-  const res = await fetch(`${BASE_URL}/products/findall`);
-  const data = await res.json();
+  const res = await fetch(`${BASE_URL}/products/findall`, { headers: authHeaders() });
+  const data = await readJsonSafely(res);
 
   const section = document.getElementById("section-product-list");
 
@@ -333,7 +349,7 @@ function noImg() {
 async function deleteProduct(id) {
   if (!(await confirmModal("Are you sure you want to delete this product?")))
     return;
-  await fetch(`${BASE_URL}/products/${id}`, { method: "DELETE" });
+  await fetch(`${BASE_URL}/products/${id}`, { method: "DELETE", headers: authHeaders() });
   loadProducts();
 }
 
@@ -376,7 +392,7 @@ function confirmModal(message) {
 /* ================= EDIT PRODUCT ================= */
 async function editProduct(id) {
   const res = await fetch(`${BASE_URL}/products/${id}`);
-  const p = await res.json();
+  const p = await readJsonSafely(res);
 
   const data = await openModal(
     "Edit Product",
@@ -399,7 +415,7 @@ async function editProduct(id) {
 
   await fetch(`${BASE_URL}/products/update/${id}`, {
     method: "PUT",
-    headers: { "Content-Type": "application/json" },
+    headers: authHeaders(),
     body: JSON.stringify({
       product_name: data.product_name,
       price: data.price,
@@ -414,8 +430,8 @@ async function editProduct(id) {
 
 /* ================= LOAD USERS ================= */
 async function loadUsers() {
-  const res = await fetch(`${BASE_URL}/users/findall`);
-  const data = await res.json();
+  const res = await fetch(`${BASE_URL}/users/findall`, { headers: authHeaders() });
+  const data = await readJsonSafely(res);
 
   const section = document.getElementById("section-user-list");
 
@@ -465,7 +481,7 @@ async function editUser(id) {
 
   await fetch(`${BASE_URL}/users/update/${id}`, {
     method: "PUT",
-    headers: { "Content-Type": "application/json" },
+    headers: authHeaders(),
     body: JSON.stringify(data),
   });
 
@@ -499,7 +515,7 @@ async function openAddModal(type) {
 
     await fetch(`${BASE_URL}/products/addproduct`, {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
+      headers: authHeaders(),
       body: JSON.stringify({
         product_name: data.product_name,
         price: data.price,
@@ -528,7 +544,7 @@ async function openAddModal(type) {
 
     await fetch(`${BASE_URL}/users/addUser`, {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
+      headers: authHeaders(),
       body: JSON.stringify(data),
     });
 
@@ -537,7 +553,7 @@ async function openAddModal(type) {
 }
 function logout() {
   localStorage.removeItem("user");
-  localStorage.clear;
+  localStorage.clear();
   window.location = "login.html";
 }
 /* ================= INIT ================= */

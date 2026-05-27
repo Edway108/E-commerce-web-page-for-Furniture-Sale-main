@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Chat with Admin</title>
+    <link href="https://fonts.googleapis.com/css2?family=DM+Sans&family=Cormorant+Garamond&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="../style/base.css">
+    <link rel="stylesheet" href="../style/main.css">
+    <link rel="stylesheet" href="../style/chat.css">
+    <link rel="icon" type="image/png" href="../style/logo.png">
+</head>
+<body>
+    <div class="header">
+        <div class="header-left">
+            <div class="header-logo" onclick="reload()"><span>Furnituree</span></div>
+            <div class="header-line"></div>
+            <div class="header-sub">Live Admin Support</div>
+        </div>
+        <div class="header-right"><button class="btn-add" onclick="reload()">Back</button></div>
+    </div>
+
+    <div class="grid-container">
+        <div class="card chat-card">
+            <div class="card-body">
+                <div class="card-name">Chat with Admin</div>
+                <div class="card-desc">Send a message. Admin will receive a live notification.</div>
+            </div>
+            <div id="messages" class="customer-chat-messages"></div>
+            <div class="card-body">
+                <div class="field"><label>Message</label><input id="messageInput" placeholder="Type something..." onkeydown="if(event.key==='Enter') sendMessage()"></div>
+                <div class="card-actions"><button class="btn-icon btn-edit" id="btn-send" onclick="sendMessage()">Send</button></div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/sockjs-client/1.5.1/sockjs.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/stomp.js/2.3.3/stomp.min.js"></script>
+    <script src="../jsLogical/chat.js"></script>
+</body>
+</html>

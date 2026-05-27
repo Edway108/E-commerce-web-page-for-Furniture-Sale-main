@@ -2,65 +2,108 @@ package com.furnituree.furnituree.Controller;
 
 import java.util.Map;
 
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
-import org.springframework.web.bind.annotation.CrossOrigin;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.furnituree.furnituree.config.JwtUtil;
+import com.furnituree.furnituree.dto.AuthResponse;
+import com.furnituree.furnituree.exception.BusinessException;
 import com.furnituree.furnituree.model.User;
 import com.furnituree.furnituree.repo.user_repo;
+import com.furnituree.furnituree.service.UserService;
 
 @RestController
-@RequestMapping("/auth")
+@RequestMapping({"/auth", "/api/v1/auth"})
 public class AuthController {
     private final user_repo uRepo;
     private final BCryptPasswordEncoder encoder;
+    private final UserService userService;
 
-    public AuthController(user_repo uRepo, BCryptPasswordEncoder encoder) {
+    public AuthController(user_repo uRepo, BCryptPasswordEncoder encoder, UserService userService) {
         this.uRepo = uRepo;
         this.encoder = encoder;
-
+        this.userService = userService;
     }
 
-    // Register
-    @CrossOrigin(origins = "*")
     @PostMapping("/register")
-    public ResponseEntity RegisterUser(@RequestBody User user) {
-        User dbUser = uRepo.findByUsername(user.getUsername());
-        if (dbUser == null) {
-            user.setPassword(encoder.encode(user.getPassword()));
+    public ResponseEntity<?> registerUser(@RequestBody Map<String, Object> request) {
+        User user = new User();
+        user.setUsername(asText(request.get("username")));
+        user.setPassword(asText(request.get("password")));
+        user.setFullName(asText(request.get("fullName")));
+        user.setEmail(asText(request.get("email")));
+        user.setAddress(asText(request.get("address")));
+        user.setPhonenumber(asInt(request.get("phonenumber")));
 
-            uRepo.save(user);
+        User saved = userService.register(user);
+        return ResponseEntity.status(HttpStatus.CREATED).body(Map.of(
+                "message", "Username successfully registered",
+                "userId", saved.getUser_Id(),
+                "username", saved.getUsername(),
+                "role", saved.getRole()));
+    }
 
-            return ResponseEntity.ok(Map.of("message", "Username sucessfully register"));
-        } else {
-            return ResponseEntity.badRequest().body(
-                    Map.of("message", "Username already exists"));
+    private String asText(Object value) {
+        if (value == null) return null;
+        String text = String.valueOf(value).trim();
+        return text.isBlank() ? null : text;
+    }
+
+    private int asInt(Object value) {
+        if (value == null || String.valueOf(value).isBlank()) return 0;
+        try {
+            return Integer.parseInt(String.valueOf(value).trim());
+        } catch (NumberFormatException ex) {
+            return 0;
         }
     }
 
-    // Login
-    @CrossOrigin(origins = "http://127.0.0.1:5500", allowCredentials = "true")
     @PostMapping("/login")
-    public ResponseEntity LoginUser(@RequestBody User user) {
-
-        User dbUser = uRepo.findByUsername(user.getUsername());
-
-        if (dbUser == null) {
-            return ResponseEntity.badRequest().body(Map.of("message", "Username not found"));
-        }
-        if (encoder.matches(user.getPassword(), dbUser.getPassword())) {
-
-            String token = JwtUtil.generateToken(user.getUsername());
-            String role = dbUser.getRole();
-            return ResponseEntity.ok(Map.of("token", token, "role", role));
+    public ResponseEntity<?> loginUser(@RequestBody Map<String, Object> request) {
+        String username = asText(request.get("username"));
+        String password = asText(request.get("password"));
+        if (username == null || password == null) {
+            throw new BusinessException("Username and password are required");
         }
 
-        return ResponseEntity.badRequest().body(Map.of("message", "Password is wrong"));
+        User dbUser = uRepo.findByUsername(username);
+        if (dbUser == null || !dbUser.isActive() || !dbUser.isAccountNonLocked()) {
+            throw new BusinessException("Invalid username or inactive account");
+        }
+
+        if (!passwordMatches(password, dbUser.getPassword())) {
+            throw new BusinessException("Password is wrong");
+        }
+
+        // If old furniture_store used plain text passwords, upgrade the password safely after login.
+        if (dbUser.getPassword() == null || !dbUser.getPassword().startsWith("$2")) {
+            dbUser.setPassword(encoder.encode(password));
+            uRepo.save(dbUser);
+        }
+
+        String token = JwtUtil.generateToken(dbUser.getUsername(), dbUser.getRole());
+        return ResponseEntity.ok(new AuthResponse(token, dbUser.getUser_Id(), dbUser.getUsername(), dbUser.getRole()));
     }
 
+    private boolean passwordMatches(String raw, String stored) {
+        if (stored == null) return false;
+        try {
+            if (stored.startsWith("$2")) {
+                return encoder.matches(raw, stored);
+            }
+        } catch (IllegalArgumentException ignored) {
+            // Old/invalid local password hash. Fall back to exact match below.
+        }
+        return raw.equals(stored);
+    }
+
+    @PostMapping("/logout")
+    public ResponseEntity<?> logout() {
+        return ResponseEntity.ok(Map.of("message", "Logout successful. Remove the JWT token on the client side."));
+    }
 }

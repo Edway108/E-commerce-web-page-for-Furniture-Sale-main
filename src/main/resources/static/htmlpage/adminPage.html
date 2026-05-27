@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Furnituree — Admin Dashboard</title>
+    <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond&family=DM+Sans&display=swap" rel="stylesheet" />
+    <link rel="stylesheet" href="../style/base.css">
+    <link rel="stylesheet" href="../style/admin.css">
+</head>
+<body class="admin-page">
+    <aside class="sidebar" id="sidebar">
+        <div class="sidebar-logo">Furni<span>turee</span></div>
+        <div class="sidebar-sub">Admin Panel</div>
+        <nav class="sidebar-nav">
+            <div class="nav-item active" onclick="showSection('dashboard')">Dashboard</div>
+            <div class="nav-group">
+                <div class="nav-item nav-parent" onclick="toggleDropdown('product-menu', this)">Products <span class="chevron">▼</span></div>
+                <div class="nav-dropdown" id="product-menu">
+                    <div class="nav-child" onclick="showSection('product-list')">• All Products</div>
+                    <div class="nav-child" onclick="openAddModal('product')">• Add Product</div>
+                </div>
+            </div>
+            <div class="nav-group">
+                <div class="nav-item nav-parent" onclick="toggleDropdown('user-menu', this)">Users <span class="chevron">▼</span></div>
+                <div class="nav-dropdown" id="user-menu">
+                    <div class="nav-child" onclick="showSection('user-list')">• All Users</div>
+                    <div class="nav-child" onclick="openAddModal('user')">• Add User</div>
+                </div>
+            </div>
+            <div class="nav-item chat-nav" onclick="showSection('chat')">Chats <span id="adminChatBadge" class="admin-chat-badge">0</span></div>
+        </nav>
+    </aside>
+
+    <main class="main-content">
+        <header class="topbar">
+            <button onclick="toggleSidebar()">☰</button>
+            <h2 id="page-title">Dashboard</h2>
+            <button class="topbar-logout" onclick="logout()">Logout</button>
+        </header>
+
+        <section class="section active" id="section-dashboard"><h1>Dashboard</h1></section>
+        <section class="section" id="section-product-list"><h1>Products</h1></section>
+        <section class="section" id="section-user-list"><h1>Users</h1></section>
+        <section class="section" id="section-chat">
+            <h1>Customer Chats</h1>
+            <div class="chat-admin-layout">
+                <div class="chat-user-list">
+                    <div class="chat-panel-title">Waiting / Active Users</div>
+                    <div id="chatUserList" class="chat-users-empty">No chat request yet.</div>
+                </div>
+                <div class="chat-panel">
+                    <div id="chatRoomTitle" class="chat-panel-title">Select a user to start chatting</div>
+                    <div id="adminMessages" class="admin-messages"></div>
+                    <div class="admin-chat-input">
+                        <input id="adminChatInput" placeholder="Type a reply..." onkeydown="if(event.key==='Enter') sendAdminMessage()">
+                        <button onclick="sendAdminMessage()">Send</button>
+                    </div>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <div class="toast" id="toast"></div>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/sockjs-client/1.5.1/sockjs.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/stomp.js/2.3.3/stomp.min.js"></script>
+    <script src="../jsLogical/admin.js"></script>
+</body>
+</html>

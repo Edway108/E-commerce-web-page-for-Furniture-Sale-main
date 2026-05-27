@@ -22,7 +22,7 @@
             <div class="header-sub">Product Catalog</div>
         </div>
         <div class="header-right">
-            <a class="btn-add" href="cart.html">🛒</a>
+            <a class="cart-link" href="cart.html" aria-label="Open cart">🛒<span id="cartCountBadge" class="cart-count-badge">0</span></a>
             <button type="button" class="btn-add" onclick="logout()">Log in</button>
         </div>
     </header>
@@ -39,22 +39,36 @@
         💬
     </button>
 
-    <div class="form-group">
-        <label></label>
-        <input style="width: 10%; margin-top: 15px;" type="text" id="productsearching">
-        <br>
-        <button class="login-btn" style="width: 10%;margin-left: 2%;" onclick="search()">SEARCH</button>
-
-
-    </div>
-
-
-    <div class="hero">
-        <div class="slides">
-            <img src="https://zerofurniture.vn/static/3375/2024/11/23/Cover%20web-20.jpg?w=1000" class="slide active">
-
+    <section class="shop-controls" aria-label="Product search and categories">
+        <div class="search-panel">
+            <input type="text" id="productsearching" placeholder="Search sofas, tables, colors..." />
+            <button class="login-btn" type="button" onclick="search()">Search</button>
+            <button class="btn-reset" type="button" onclick="resetProductFilters()">Reset</button>
         </div>
-    </div>
+
+        <div class="category-strip">
+            <button class="category-tile active" data-category="all" onclick="filterCategory('all', this)">
+                <span class="category-icon">✦</span>
+                <span>All pieces</span>
+            </button>
+            <button class="category-tile" data-category="sofa" onclick="filterCategory('sofa', this)">
+                <span class="category-icon">▰▰▱</span>
+                <span>Sofas</span>
+            </button>
+            <button class="category-tile" data-category="coffee" onclick="filterCategory('coffee', this)">
+                <span class="category-icon">▔▔</span>
+                <span>Coffee & side tables</span>
+            </button>
+            <button class="category-tile" data-category="pouf" onclick="filterCategory('pouf', this)">
+                <span class="category-icon">◖</span>
+                <span>Poufs</span>
+            </button>
+            <button class="category-tile" data-category="dining" onclick="filterCategory('dining', this)">
+                <span class="category-icon">▔▔</span>
+                <span>Dining tables</span>
+            </button>
+        </div>
+    </section>
     <!-- GRID -->
     <div class="grid-container">
         <div id="loadingState" class="loading">

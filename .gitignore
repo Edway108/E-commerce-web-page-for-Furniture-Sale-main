@@ -31,3 +31,11 @@ build/
 
 ### VS Code ###
 .vscode/
+
+### Environment and uploads ###
+.env
+.env.*
+!.env.example
+uploads/*
+!uploads/.gitkeep
+*.log

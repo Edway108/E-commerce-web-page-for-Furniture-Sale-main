@@ -9,7 +9,6 @@ import org.springframework.web.socket.config.annotation.WebSocketMessageBrokerCo
 @Configuration
 @EnableWebSocketMessageBroker
 public class webSocketChatConfig implements WebSocketMessageBrokerConfigurer {
-
     @Override
     public void configureMessageBroker(MessageBrokerRegistry config) {
         config.enableSimpleBroker("/topic");
@@ -19,7 +18,7 @@ public class webSocketChatConfig implements WebSocketMessageBrokerConfigurer {
     @Override
     public void registerStompEndpoints(StompEndpointRegistry registry) {
         registry.addEndpoint("/ws")
-                .setAllowedOriginPatterns("http://127.0.0.1:5500", "http://localhost:5500")
+                .setAllowedOriginPatterns("http://127.0.0.1:*", "http://localhost:*", "https://*.ngrok-free.dev", "https://*.onrender.com", "https://*.railway.app")
                 .withSockJS();
     }
 }
