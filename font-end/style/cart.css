@@ -682,7 +682,6 @@ a {
     background: #dceef8;
     color: var(--accent2);
     border: 1px solid var(--border);
-<<<<<<< HEAD
 }
 .delete-btn {
     margin-top: 8px;
@@ -766,6 +765,3 @@ a {
 .toast.success {
     background: #2d8a57;
 }
-=======
-}
->>>>>>> parent of 353f624 (feat: Implement delete item functionality in cart and enhance cart management)
