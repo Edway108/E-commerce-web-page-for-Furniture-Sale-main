@@ -11,6 +11,7 @@ import org.springframework.web.bind.annotation.RestController;
 
 import com.furnituree.furnituree.config.JwtUtil;
 import com.furnituree.furnituree.dto.addToCartRequest;
+import com.furnituree.furnituree.dto.deleteFromCart;
 import com.furnituree.furnituree.model.Cart;
 import com.furnituree.furnituree.model.CartItem;
 import com.furnituree.furnituree.model.Product;
@@ -22,6 +23,7 @@ import com.furnituree.furnituree.repo.user_repo;
 
 @RestController
 @RequestMapping("/cart")
+@SuppressWarnings("InitializerMayBeStatic")
 public class cartController {
     private final user_repo usRepo;
     private final cart_repo caRepo;
@@ -67,7 +69,7 @@ public class cartController {
             throw new RuntimeException("Product not found");
         }
 
-        // make the cart item
+        // find the cart
         CartItem cartItem = caitemRepo.findByCartAndProduct(cart, product);
 
         if (cartItem != null) {
@@ -117,18 +119,31 @@ public class cartController {
         caRepo.delete(cart);
     }
 
-    // @DeleteMapping("/item/{cartItemId}")
-    // public void deleteCartItem(@PathVariable Long cartItemId,
-    // @RequestHeader("Authorization") String header) {
-    // // Extract username from token
-    // String token = header.substring(7);
-    // String username = JwtUtil.extractUsername(token);
-    // User user = usRepo.findByUsername(username);
+    // DELETE CartItem
+    @DeleteMapping("/item")
+    public Cart deleteFromCart(@RequestHeader("Authorization") String header, @RequestBody deleteFromCart req) {
 
-    // // Find the cart by user and cartId
-    // CartItem cartItem = caitemRepo.findById(cartItemId)
-    // .orElseThrow(() -> new RuntimeException("CartItem not found"));
+        String token = header.substring(7);
+        String username = JwtUtil.extractUsername(token);
+        User user = usRepo.findByUsername(username);
 
-    // caitemRepo.delete(cartItem);
+        Cart cart = caRepo.findByUser(user);
+        if (cart == null) {
+            throw new RuntimeException("Cart not found");
+        }
 
+        Long productId = req.getProductId();
+        Product product = proRepo.findById(productId)
+                .orElseThrow(() -> new RuntimeException("Product not found"));
+
+        CartItem cartItem = caitemRepo.findByCartAndProduct(cart, product);
+        if (cartItem == null) {
+            throw new RuntimeException("Item not found in cart");
+        }
+
+        caitemRepo.delete(cartItem);
+
+        return caRepo.findById(cart.getCartId()).orElse(cart); // return refreshed
+        // cart
+    }
 }

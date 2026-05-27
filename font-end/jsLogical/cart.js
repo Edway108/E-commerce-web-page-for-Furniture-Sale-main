@@ -26,6 +26,8 @@ function authHeaders() {
 
 // FETCH CART
 async function fetchAll() {
+  // Trong fetchAll, thêm log này
+  // xem structure thật sự
   if (!(await checkAuth())) return;
   let token = localStorage.getItem("token");
 
@@ -46,6 +48,7 @@ async function fetchAll() {
     if (!res.ok) throw new Error(`Server error: ${res.status}`);
 
     const cart = await res.json();
+    console.log("cart data:", JSON.stringify(cart));
     currentCart = cart;
 
     const items = cart?.cartItems || [];
@@ -64,7 +67,6 @@ async function deleteCart() {
   if (!currentCart) return;
 
   const cartId = currentCart.cartId;
-
   try {
     const res = await fetch(`${API}/${cartId}`, {
       method: "DELETE",
@@ -99,7 +101,7 @@ function renderGrid(items) {
 
   grid.innerHTML = items
     .map(
-      (item, idx) => `
+      (item) => `
       <div class="card">
         ${
           item.product?.img
@@ -107,9 +109,17 @@ function renderGrid(items) {
             : `<div class="card-img-placeholder">No Image</div>`
         }
         <div class="card-body">
-          <div class="card-name">${item.product?.product_name}</div>
+          <div class="card-name">${
+            item.product?.product_name ?? item.product?.productName
+          }</div>
           <div class="card-price">$${formatPrice(item.price)}</div>
           <div>Qty: ${item.quantity}</div>
+          <button 
+            class="delete-btn" 
+            onclick="deleteItem(${item.product?.id})"
+          >
+            🗑 Remove
+          </button>
         </div>
       </div>
     `
@@ -148,4 +158,23 @@ function logout() {
   localStorage.removeItem("user");
   localStorage.clear;
   window.location = "login.html";
+}
+
+async function deleteItem(productId) {
+  if (!(await checkAuth())) return;
+
+  try {
+    const res = await fetch(`${API}/item`, {
+      method: "DELETE",
+      headers: authHeaders(),
+      body: JSON.stringify({ productId: productId }),
+    });
+
+    if (!res.ok) throw new Error();
+
+    showToast("Item removed", "success");
+    await fetchAll(); // re-fetch lại cart
+  } catch {
+    showToast("Failed to remove item", "error");
+  }
 }

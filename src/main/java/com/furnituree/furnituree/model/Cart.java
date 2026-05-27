@@ -3,6 +3,7 @@ package com.furnituree.furnituree.model;
 import java.util.List;
 
 import jakarta.persistence.Entity;
+import jakarta.persistence.FetchType;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
@@ -26,7 +27,8 @@ public class Cart {
     // one to many relationship ; which one cart could have many item
     // and mapped by for it said " hey i got cart in cart id so no need to make
     // collumn here"
-    @OneToMany(mappedBy = "cart")
+    @OneToMany(mappedBy = "cart", fetch = FetchType.EAGER, cascade = {
+            jakarta.persistence.CascadeType.ALL }, orphanRemoval = true)
     private List<CartItem> cartItems;
 
     // getter and setter
@@ -48,11 +50,11 @@ public class Cart {
         this.user = user;
     }
 
-    public List<CartItem> getcartItems() {
+    public List<CartItem> getCartItems() {
         return cartItems;
     }
 
-    public void setItems(List<CartItem> cartItems) {
+    public void setCartItems(List<CartItem> cartItems) {
         this.cartItems = cartItems;
     }
 }
