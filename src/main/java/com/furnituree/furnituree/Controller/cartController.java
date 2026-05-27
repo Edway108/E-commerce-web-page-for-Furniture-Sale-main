@@ -11,9 +11,12 @@ import org.springframework.web.bind.annotation.RestController;
 
 import com.furnituree.furnituree.config.JwtUtil;
 import com.furnituree.furnituree.dto.addToCartRequest;
+<<<<<<< HEAD
 import com.furnituree.furnituree.dto.deleteFromCart;
 import com.furnituree.furnituree.exception.BusinessException;
 import com.furnituree.furnituree.exception.ResourceNotFoundException;
+=======
+>>>>>>> parent of 353f624 (feat: Implement delete item functionality in cart and enhance cart management)
 import com.furnituree.furnituree.model.Cart;
 import com.furnituree.furnituree.model.CartItem;
 import com.furnituree.furnituree.model.Product;
@@ -24,7 +27,11 @@ import com.furnituree.furnituree.repo.product_repo;
 import com.furnituree.furnituree.repo.user_repo;
 
 @RestController
+<<<<<<< HEAD
 @RequestMapping({"/cart", "/api/v1/cart"})
+=======
+@RequestMapping("/cart")
+>>>>>>> parent of 353f624 (feat: Implement delete item functionality in cart and enhance cart management)
 public class cartController {
     private final user_repo usRepo;
     private final cart_repo caRepo;
@@ -53,6 +60,10 @@ public class cartController {
         if (!product.isActive() || !"ACTIVE".equalsIgnoreCase(product.getStatus())) throw new BusinessException("Product is not available");
         if (product.getQuantity() < quantity) throw new BusinessException("Not enough stock");
 
+<<<<<<< HEAD
+=======
+        // make the cart item
+>>>>>>> parent of 353f624 (feat: Implement delete item functionality in cart and enhance cart management)
         CartItem cartItem = caitemRepo.findByCartAndProduct(cart, product);
         if (cartItem != null) {
             long newQuantity = cartItem.getQuantity() + quantity;
@@ -84,6 +95,7 @@ public class cartController {
         caRepo.delete(cart);
     }
 
+<<<<<<< HEAD
     @DeleteMapping("/item")
     public Cart deleteFromCart(@RequestHeader("Authorization") String header, @RequestBody deleteFromCart req) {
         return removeProductFromCart(header, req.getProductId());
@@ -125,4 +137,20 @@ public class cartController {
         if (user == null) throw new ResourceNotFoundException("User not found");
         return user;
     }
+=======
+    // @DeleteMapping("/item/{cartItemId}")
+    // public void deleteCartItem(@PathVariable Long cartItemId,
+    // @RequestHeader("Authorization") String header) {
+    // // Extract username from token
+    // String token = header.substring(7);
+    // String username = JwtUtil.extractUsername(token);
+    // User user = usRepo.findByUsername(username);
+
+    // // Find the cart by user and cartId
+    // CartItem cartItem = caitemRepo.findById(cartItemId)
+    // .orElseThrow(() -> new RuntimeException("CartItem not found"));
+
+    // caitemRepo.delete(cartItem);
+
+>>>>>>> parent of 353f624 (feat: Implement delete item functionality in cart and enhance cart management)
 }

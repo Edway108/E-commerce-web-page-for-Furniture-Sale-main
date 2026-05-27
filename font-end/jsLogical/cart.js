@@ -46,9 +46,16 @@ function escapeHtml(value) {
     .replaceAll("'", "&#039;");
 }
 
+<<<<<<< HEAD
 function productName(product) {
   return product?.product_name || product?.productName || product?.name || "Untitled product";
 }
+=======
+// FETCH CART
+async function fetchAll() {
+  if (!(await checkAuth())) return;
+  let token = localStorage.getItem("token");
+>>>>>>> parent of 353f624 (feat: Implement delete item functionality in cart and enhance cart management)
 
 function productIdFromItem(item) {
   return item?.product?.id || item?.productId || item?.id;
@@ -77,10 +84,15 @@ async function fetchAll() {
       return;
     }
 
+<<<<<<< HEAD
     if (!res.ok) {
       const err = await readJsonSafely(res).catch(() => ({}));
       throw new Error(err.message || `Server error: ${res.status}`);
     }
+=======
+    const cart = await res.json();
+    currentCart = cart;
+>>>>>>> parent of 353f624 (feat: Implement delete item functionality in cart and enhance cart management)
 
     const cart = await readJsonSafely(res);
     currentCart = cart && cart.cartId ? cart : null;
@@ -104,6 +116,11 @@ async function deleteCart() {
   }
   if (!confirm("Remove all items from cart?")) return;
 
+<<<<<<< HEAD
+=======
+  const cartId = currentCart.cartId;
+
+>>>>>>> parent of 353f624 (feat: Implement delete item functionality in cart and enhance cart management)
   try {
     const res = await fetch(`${API}/${currentCart.cartId}`, {
       method: "DELETE",
@@ -138,6 +155,7 @@ function renderGrid(items) {
 
   document.getElementById("emptyState").style.display = "none";
 
+<<<<<<< HEAD
   grid.innerHTML = safeItems
     .map((item) => {
       const product = item.product || {};
@@ -164,6 +182,25 @@ function renderGrid(items) {
           </div>
         </div>`;
     })
+=======
+  grid.innerHTML = items
+    .map(
+      (item, idx) => `
+      <div class="card">
+        ${
+          item.product?.img
+            ? `<img src="${item.product.img}" class="card-img">`
+            : `<div class="card-img-placeholder">No Image</div>`
+        }
+        <div class="card-body">
+          <div class="card-name">${item.product?.product_name}</div>
+          <div class="card-price">$${formatPrice(item.price)}</div>
+          <div>Qty: ${item.quantity}</div>
+        </div>
+      </div>
+    `
+    )
+>>>>>>> parent of 353f624 (feat: Implement delete item functionality in cart and enhance cart management)
     .join("");
 }
 
@@ -207,6 +244,7 @@ function logout() {
   localStorage.clear();
   window.location = "login.html";
 }
+<<<<<<< HEAD
 
 async function deleteItem(productId) {
   if (!(await checkAuth())) return;
@@ -302,3 +340,5 @@ async function submitCheckout() {
 document.addEventListener("DOMContentLoaded", () => {
   fetchAll();
 });
+=======
+>>>>>>> parent of 353f624 (feat: Implement delete item functionality in cart and enhance cart management)

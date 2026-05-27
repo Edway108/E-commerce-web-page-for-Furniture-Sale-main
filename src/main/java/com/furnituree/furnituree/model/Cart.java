@@ -6,7 +6,6 @@ import java.util.List;
 
 import jakarta.persistence.CascadeType;
 import jakarta.persistence.Entity;
-import jakarta.persistence.FetchType;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
@@ -27,8 +26,16 @@ public class Cart {
     @JoinColumn(name = "user_id", unique = true)
     private User user;
 
+<<<<<<< HEAD
     @OneToMany(mappedBy = "cart", fetch = FetchType.EAGER, cascade = CascadeType.ALL, orphanRemoval = true)
     private List<CartItem> cartItems = new ArrayList<>();
+=======
+    // one to many relationship ; which one cart could have many item
+    // and mapped by for it said " hey i got cart in cart id so no need to make
+    // collumn here"
+    @OneToMany(mappedBy = "cart")
+    private List<CartItem> cartItems;
+>>>>>>> parent of 353f624 (feat: Implement delete item functionality in cart and enhance cart management)
 
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
@@ -40,6 +47,7 @@ public class Cart {
         this.updatedAt = now;
     }
 
+<<<<<<< HEAD
     public Long getCartId() { return cartId; }
     public void setCartId(Long cartId) { this.cartId = cartId; }
     public User getUser() { return user; }
@@ -50,4 +58,26 @@ public class Cart {
     public void setCreatedAt(LocalDateTime createdAt) { this.createdAt = createdAt; }
     public LocalDateTime getUpdatedAt() { return updatedAt; }
     public void setUpdatedAt(LocalDateTime updatedAt) { this.updatedAt = updatedAt; }
+=======
+    public void setCartId(Long cartId) {
+        this.cartId = cartId;
+    }
+
+    public User getUser() {
+        return user;
+
+    }
+
+    public void setUser(User user) {
+        this.user = user;
+    }
+
+    public List<CartItem> getcartItems() {
+        return cartItems;
+    }
+
+    public void setItems(List<CartItem> cartItems) {
+        this.cartItems = cartItems;
+    }
+>>>>>>> parent of 353f624 (feat: Implement delete item functionality in cart and enhance cart management)
 }
