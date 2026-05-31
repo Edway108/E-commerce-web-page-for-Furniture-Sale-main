@@ -9,8 +9,8 @@ Update this section before submission.
 | Member | Role | Main Contributions |
 |---|---|---|
 | Trần Lê Minh Quân | Backend / Database / Documentation | Spring Boot APIs, database schema, seed data, security, deployment docs |
-| Member 2 | Frontend / UI | HTML/CSS/JS pages, responsive layout, catalog UI |
-| Member 3 | QA / Report | Testing, screenshots, technical report, presentation |
+| Nguyễn Phước Thịnh | Frontend / UI | HTML/CSS/JS pages, responsive layout, catalog UI |
+
 
 ## Technology Stack
 
