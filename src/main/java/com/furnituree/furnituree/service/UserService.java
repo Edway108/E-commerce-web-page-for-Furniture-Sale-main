@@ -35,32 +35,29 @@ public class UserService {
     }
 
     @Transactional
-    public User register(User input) {
-        String username = input.getUsername() == null ? null : input.getUsername().trim();
-        String email = input.getEmail() == null ? null : input.getEmail().trim();
-        input.setUsername(username);
-        input.setEmail(email == null || email.isBlank() ? null : email);
+    public User register(User user) {
+        String username = user.getUsername() == null ? null : user.getUsername().trim();
+        String email = user.getEmail() == null ? null : user.getEmail().trim();
+        user.setUsername(username);
+        user.setEmail(email == null || email.isBlank() ? null : email);
 
         if (username == null || username.isBlank()) {
             throw new BusinessException("Username is required");
         }
-        if (input.getPassword() == null || input.getPassword().length() < 8) {
+        if (user.getPassword() == null || user.getPassword().length() < 8) {
             throw new BusinessException("Password must be at least 8 characters");
         }
         if (userRepository.existsByUsername(username)) {
             throw new BusinessException("Username already exists");
         }
-        if (input.getEmail() != null && userRepository.existsByEmail(input.getEmail())) {
+        if (user.getEmail() != null && userRepository.existsByEmail(user.getEmail())) {
             throw new BusinessException("Email already exists");
         }
-        String role = normalizeRole(input.getRole());
-        if (!role.equals("CUSTOMER") && !role.equals("MANAGER") && !role.equals("ADMIN")) {
-            role = "CUSTOMER";
-        }
-        input.setRole(role);
-        input.setPassword(encoder.encode(input.getPassword()));
-        input.setActive(true);
-        User saved = userRepository.save(input);
+
+        user.setRole("CUSTOMER");
+        user.setPassword(encoder.encode(user.getPassword()));
+        user.setActive(true);
+        User saved = userRepository.save(user);
         auditService.record("CREATE", "User", saved.getUser_Id(), "New user registered");
         return saved;
     }
@@ -103,7 +100,8 @@ public class UserService {
     public User setActive(Long id, boolean active) {
         User user = userRepository.findById(id).orElseThrow(() -> new ResourceNotFoundException("User not found"));
         user.setActive(active);
-        auditService.record(active ? "ACTIVATE" : "DEACTIVATE", "User", user.getUser_Id(), "Admin changed active status");
+        auditService.record(active ? "ACTIVATE" : "DEACTIVATE", "User", user.getUser_Id(),
+                "Admin changed active status");
         return userRepository.save(user);
     }
 

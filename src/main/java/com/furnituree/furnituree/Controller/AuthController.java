@@ -18,7 +18,7 @@ import com.furnituree.furnituree.repo.user_repo;
 import com.furnituree.furnituree.service.UserService;
 
 @RestController
-@RequestMapping({"/auth", "/api/v1/auth"})
+@RequestMapping({ "/auth", "/api/v1/auth" })
 public class AuthController {
     private final user_repo uRepo;
     private final BCryptPasswordEncoder encoder;
@@ -48,14 +48,19 @@ public class AuthController {
                 "role", saved.getRole()));
     }
 
+    // Define if the code is null or not if it have text then just give it back and
+    // delete the white space
     private String asText(Object value) {
-        if (value == null) return null;
+        if (value == null)
+            return null;
         String text = String.valueOf(value).trim();
         return text.isBlank() ? null : text;
     }
 
+    // define if it is a number or not
     private int asInt(Object value) {
-        if (value == null || String.valueOf(value).isBlank()) return 0;
+        if (value == null || String.valueOf(value).isBlank())
+            return 0;
         try {
             return Integer.parseInt(String.valueOf(value).trim());
         } catch (NumberFormatException ex) {
@@ -80,30 +85,25 @@ public class AuthController {
             throw new BusinessException("Password is wrong");
         }
 
-        // If old furniture_store used plain text passwords, upgrade the password safely after login.
-        if (dbUser.getPassword() == null || !dbUser.getPassword().startsWith("$2")) {
-            dbUser.setPassword(encoder.encode(password));
-            uRepo.save(dbUser);
-        }
-
+        // Generate the token then response back
         String token = JwtUtil.generateToken(dbUser.getUsername(), dbUser.getRole());
         return ResponseEntity.ok(new AuthResponse(token, dbUser.getUser_Id(), dbUser.getUsername(), dbUser.getRole()));
     }
 
     private boolean passwordMatches(String raw, String stored) {
-        if (stored == null) return false;
+        if (stored == null)
+            return false;
         try {
             if (stored.startsWith("$2")) {
-                return encoder.matches(raw, stored);
+                return encoder.matches(raw, stored);// automatically hash raw then send back to compare
             }
         } catch (IllegalArgumentException ignored) {
-            // Old/invalid local password hash. Fall back to exact match below.
         }
         return raw.equals(stored);
     }
 
     @PostMapping("/logout")
     public ResponseEntity<?> logout() {
-        return ResponseEntity.ok(Map.of("message", "Logout successful. Remove the JWT token on the client side."));
+        return ResponseEntity.ok(Map.of("message", "Logout successful."));
     }
 }

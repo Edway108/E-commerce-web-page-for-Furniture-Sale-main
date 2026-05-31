@@ -28,10 +28,27 @@ public class Wishlist extends Auditable {
     @OneToMany(mappedBy = "wishlist", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.EAGER)
     private List<WishlistItem> items = new ArrayList<>();
 
-    public Long getId() { return id; }
-    public void setId(Long id) { this.id = id; }
-    public User getUser() { return user; }
-    public void setUser(User user) { this.user = user; }
-    public List<WishlistItem> getItems() { return items; }
-    public void setItems(List<WishlistItem> items) { this.items = items; }
+    public Long getId() {
+        return id;
+    }
+
+    public void setId(Long id) {
+        this.id = id;
+    }
+
+    public User getUser() {
+        return user;
+    }
+
+    public void setUser(User user) {
+        this.user = user;
+    }
+
+    public List<WishlistItem> getItems() {
+        return items;
+    }
+
+    public void setItems(List<WishlistItem> items) {
+        this.items = items;
+    }
 }

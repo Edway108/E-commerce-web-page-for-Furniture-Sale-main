@@ -29,7 +29,7 @@ public class ProductService {
     private final AuditService auditService;
 
     public ProductService(product_repo productRepository, CategoryRepository categoryRepository,
-                          TagRepository tagRepository, AuditService auditService) {
+            TagRepository tagRepository, AuditService auditService) {
         this.productRepository = productRepository;
         this.categoryRepository = categoryRepository;
         this.tagRepository = tagRepository;
@@ -41,7 +41,7 @@ public class ProductService {
     }
 
     public Page<Product> search(String keyword, Long categoryId, Double minPrice, Double maxPrice,
-                                String status, String material, Boolean active, Pageable pageable) {
+            String status, String material, Boolean active, Pageable pageable) {
         Specification<Product> spec = (root, query, cb) -> {
             Predicate p = cb.conjunction();
             if (keyword != null && !keyword.isBlank()) {
@@ -163,7 +163,8 @@ public class ProductService {
         if (request.getTags() != null) {
             Set<Tag> tags = new LinkedHashSet<>();
             for (String name : request.getTags()) {
-                if (name == null || name.isBlank()) continue;
+                if (name == null || name.isBlank())
+                    continue;
                 Tag tag = tagRepository.findByNameIgnoreCase(name.trim()).orElseGet(() -> {
                     Tag created = new Tag();
                     created.setName(name.trim());

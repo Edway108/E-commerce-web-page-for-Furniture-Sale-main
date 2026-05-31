@@ -26,7 +26,8 @@ public class AuditService {
         } catch (Exception ignored) {
             // Audit trail is important for grading, but it must not break user-facing
             // workflows if an old local database has an outdated audit_logs schema.
-            // The app can continue and the schema can be repaired by running database/schema.sql.
+            // The app can continue and the schema can be repaired by running
+            // database/schema.sql.
         }
     }
 }

@@ -1,15 +1,15 @@
 package com.furnituree.furnituree.dto;
 
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Random;
-import java.util.LinkedHashSet;
 import java.util.Set;
 
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.jdbc.core.JdbcTemplate;
+import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 
 import com.furnituree.furnituree.model.Category;
 import com.furnituree.furnituree.model.Product;
@@ -24,11 +24,11 @@ import com.furnituree.furnituree.repo.user_repo;
 public class DataSeeder {
     @Bean
     CommandLineRunner initDatabase(product_repo productRepo,
-                                   CategoryRepository categoryRepo,
-                                   TagRepository tagRepo,
-                                   user_repo userRepo,
-                                   BCryptPasswordEncoder encoder,
-                                   JdbcTemplate jdbcTemplate) {
+            CategoryRepository categoryRepo,
+            TagRepository tagRepo,
+            user_repo userRepo,
+            BCryptPasswordEncoder encoder,
+            JdbcTemplate jdbcTemplate) {
         return args -> {
             runCompatibilityMigration(jdbcTemplate);
             seedUsers(userRepo, encoder);
@@ -39,18 +39,24 @@ public class DataSeeder {
     }
 
     /**
-     * Keeps the upgraded application compatible with the original furniture_store database.
-     * Hibernate ddl-auto=update is convenient, but it may not safely alter old MySQL tables
-     * when the previous schema used shorter ENUM/VARCHAR columns or when old junction-table
-     * rows do not match the new foreign-key rules. This lightweight migration adds only the
+     * Keeps the upgraded application compatible with the original furniture_store
+     * database.
+     * Hibernate ddl-auto=update is convenient, but it may not safely alter old
+     * MySQL tables
+     * when the previous schema used shorter ENUM/VARCHAR columns or when old
+     * junction-table
+     * rows do not match the new foreign-key rules. This lightweight migration adds
+     * only the
      * missing columns required by the new entities and keeps existing data intact.
      */
     private void runCompatibilityMigration(JdbcTemplate jdbc) {
         executeSilently(jdbc, "ALTER TABLE `user` MODIFY COLUMN `role` VARCHAR(30) NOT NULL DEFAULT 'CUSTOMER'");
-        executeSilently(jdbc, "UPDATE `user` SET `role` = REPLACE(UPPER(`role`), 'ROLE_', '') WHERE `role` IS NOT NULL");
+        executeSilently(jdbc,
+                "UPDATE `user` SET `role` = REPLACE(UPPER(`role`), 'ROLE_', '') WHERE `role` IS NOT NULL");
 
         ensureColumn(jdbc, "user", "created_at", "DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP");
-        ensureColumn(jdbc, "user", "updated_at", "DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP");
+        ensureColumn(jdbc, "user", "updated_at",
+                "DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP");
         ensureColumn(jdbc, "user", "created_by", "VARCHAR(255) DEFAULT 'system'");
         ensureColumn(jdbc, "user", "updated_by", "VARCHAR(255) NULL");
         ensureColumn(jdbc, "user", "active", "BIT(1) NOT NULL DEFAULT b'1'");
@@ -60,7 +66,8 @@ public class DataSeeder {
         ensureColumn(jdbc, "user", "account_non_locked", "BIT(1) NOT NULL DEFAULT b'1'");
 
         ensureColumn(jdbc, "product", "created_at", "DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP");
-        ensureColumn(jdbc, "product", "updated_at", "DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP");
+        ensureColumn(jdbc, "product", "updated_at",
+                "DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP");
         ensureColumn(jdbc, "product", "created_by", "VARCHAR(255) DEFAULT 'system'");
         ensureColumn(jdbc, "product", "updated_by", "VARCHAR(255) NULL");
         ensureColumn(jdbc, "product", "active", "BIT(1) NOT NULL DEFAULT b'1'");
@@ -74,19 +81,23 @@ public class DataSeeder {
         ensureColumn(jdbc, "product", "category_id", "BIGINT NULL");
 
         ensureColumn(jdbc, "cart", "created_at", "DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP");
-        ensureColumn(jdbc, "cart", "updated_at", "DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP");
+        ensureColumn(jdbc, "cart", "updated_at",
+                "DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP");
         ensureColumn(jdbc, "cart", "created_by", "VARCHAR(255) DEFAULT 'system'");
         ensureColumn(jdbc, "cart", "updated_by", "VARCHAR(255) NULL");
         ensureColumn(jdbc, "cart", "active", "BIT(1) NOT NULL DEFAULT b'1'");
 
         ensureColumn(jdbc, "cart_item", "created_at", "DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP");
-        ensureColumn(jdbc, "cart_item", "updated_at", "DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP");
+        ensureColumn(jdbc, "cart_item", "updated_at",
+                "DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP");
         ensureColumn(jdbc, "cart_item", "created_by", "VARCHAR(255) DEFAULT 'system'");
         ensureColumn(jdbc, "cart_item", "updated_by", "VARCHAR(255) NULL");
         ensureColumn(jdbc, "cart_item", "active", "BIT(1) NOT NULL DEFAULT b'1'");
 
-        executeSilently(jdbc, "CREATE TABLE IF NOT EXISTS product_tags (product_id BIGINT NOT NULL, tag_id BIGINT NOT NULL)");
-        executeSilently(jdbc, "DELETE pt FROM product_tags pt LEFT JOIN product p ON p.id = pt.product_id WHERE p.id IS NULL");
+        executeSilently(jdbc,
+                "CREATE TABLE IF NOT EXISTS product_tags (product_id BIGINT NOT NULL, tag_id BIGINT NOT NULL)");
+        executeSilently(jdbc,
+                "DELETE pt FROM product_tags pt LEFT JOIN product p ON p.id = pt.product_id WHERE p.id IS NULL");
         executeSilently(jdbc, "DELETE pt FROM product_tags pt LEFT JOIN tags t ON t.id = pt.tag_id WHERE t.id IS NULL");
     }
 
@@ -117,7 +128,7 @@ public class DataSeeder {
     }
 
     private void createUser(user_repo repo, BCryptPasswordEncoder encoder, String username, String email,
-                            String fullName, String password, String role) {
+            String fullName, String password, String role) {
         User user = repo.findByUsername(username);
         if (user == null) {
             user = new User();
@@ -125,7 +136,8 @@ public class DataSeeder {
             user.setAddress("Ho Chi Minh City, Vietnam");
             user.setPhonenumber(900000000);
         }
-        // Keep demo accounts reliable even when the old local database already had users.
+        // Keep demo accounts reliable even when the old local database already had
+        // users.
         user.setEmail(email);
         user.setFullName(fullName);
         user.setPassword(encoder.encode(password));
@@ -138,12 +150,12 @@ public class DataSeeder {
 
     private List<Category> seedCategories(CategoryRepository repo) {
         String[][] data = {
-                {"Sofas", "Comfortable sofas for living rooms"},
-                {"Tables", "Dining, coffee, and work tables"},
-                {"Chairs", "Office chairs, dining chairs, and lounge chairs"},
-                {"Beds", "Bedroom furniture and bed frames"},
-                {"Storage", "Wardrobes, cabinets, shelves, and TV stands"},
-                {"Decor", "Lamps and decorative furniture pieces"}
+                { "Sofas", "Comfortable sofas for living rooms" },
+                { "Tables", "Dining, coffee, and work tables" },
+                { "Chairs", "Office chairs, dining chairs, and lounge chairs" },
+                { "Beds", "Bedroom furniture and bed frames" },
+                { "Storage", "Wardrobes, cabinets, shelves, and TV stands" },
+                { "Decor", "Lamps and decorative furniture pieces" }
         };
         for (int i = 0; i < data.length; i++) {
             final int order = i + 1;
@@ -175,23 +187,27 @@ public class DataSeeder {
             return;
         }
         Random random = new Random(7);
-        String[] names = {"Nordic Sofa", "Oak Table", "Ergo Chair", "Queen Bed", "Walnut Wardrobe", "Study Desk", "Floor Lamp", "Wall Shelf", "TV Stand", "Coffee Cabinet"};
-        String[] materials = {"Oak wood", "Walnut", "Metal", "Rattan", "Fabric", "Leather"};
-        String[] colors = {"Natural", "White", "Black", "Brown", "Cream", "Gray"};
+        String[] names = { "Nordic Sofa", "Oak Table", "Ergo Chair", "Queen Bed", "Walnut Wardrobe", "Study Desk",
+                "Floor Lamp", "Wall Shelf", "TV Stand", "Coffee Cabinet" };
+        String[] materials = { "Oak wood", "Walnut", "Metal", "Rattan", "Fabric", "Leather" };
+        String[] colors = { "Natural", "White", "Black", "Brown", "Cream", "Gray" };
         for (long i = current + 1; i <= 100; i++) {
             Product p = new Product();
             p.setProductName(names[(int) (i % names.length)] + " " + i);
             p.setPrice(120 + random.nextInt(1800));
             p.setQuantity((long) (5 + random.nextInt(80)));
             p.setStockThreshold(5L + random.nextInt(8));
-            p.setDescription("Realistic sample furniture product for demo and search/filter testing. Item number " + i + " includes material, color, stock, and category data.");
+            p.setDescription("Realistic sample furniture product for demo and search/filter testing. Item number " + i
+                    + " includes material, color, stock, and category data.");
             p.setImg("https://picsum.photos/seed/furniture" + i + "/600/400");
             p.setMaterial(materials[random.nextInt(materials.length)]);
             p.setColor(colors[random.nextInt(colors.length)]);
-            p.setDimensions((80 + random.nextInt(140)) + " x " + (60 + random.nextInt(80)) + " x " + (40 + random.nextInt(90)) + " cm");
+            p.setDimensions((80 + random.nextInt(140)) + " x " + (60 + random.nextInt(80)) + " x "
+                    + (40 + random.nextInt(90)) + " cm");
             p.setConditionStatus(i % 4 == 0 ? "USED_GOOD" : "NEW");
             p.setStatus("ACTIVE");
-            if (!categories.isEmpty()) p.setCategory(categories.get(random.nextInt(categories.size())));
+            if (!categories.isEmpty())
+                p.setCategory(categories.get(random.nextInt(categories.size())));
             if (tags.size() >= 2) {
                 Set<Tag> assignedTags = new LinkedHashSet<>();
                 assignedTags.add(tags.get(random.nextInt(tags.size())));

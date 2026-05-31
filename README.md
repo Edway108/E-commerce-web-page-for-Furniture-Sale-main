@@ -6,22 +6,26 @@ Furnituree is a full-stack furniture e-commerce web application built for the We
 
 Update this section before submission.
 
-| Member | Role | Main Contributions |
-|---|---|---|
+| Member            | Role                               | Main Contributions                                                      |
+| ----------------- | ---------------------------------- | ----------------------------------------------------------------------- |
 | Trần Lê Minh Quân | Backend / Database / Documentation | Spring Boot APIs, database schema, seed data, security, deployment docs |
+<<<<<<< HEAD
 | Nguyễn Phước Thịnh | Frontend / UI | HTML/CSS/JS pages, responsive layout, catalog UI |
 
+=======
+| Member 2          | Frontend / UI                      | HTML/CSS/JS pages, responsive layout, catalog UI                        |
+>>>>>>> 0964c68 (Refactor model classes for improved readability and consistency)
 
 ## Technology Stack
 
-| Layer | Technology |
-|---|---|
-| Frontend | HTML5, CSS3, Vanilla JavaScript |
-| Backend | Java 21, Spring Boot 3.5.11 |
-| Database | MySQL / MariaDB, Spring Data JPA/Hibernate |
-| Security | Spring Security, JWT, BCrypt |
-| Real-time | Spring WebSocket + STOMP + SockJS |
-| Build | Maven Wrapper |
+| Layer      | Technology                                         |
+| ---------- | -------------------------------------------------- |
+| Frontend   | HTML5, CSS3, Vanilla JavaScript                    |
+| Backend    | Java 21, Spring Boot 3.5.11                        |
+| Database   | MySQL / MariaDB, Spring Data JPA/Hibernate         |
+| Security   | Spring Security, JWT, BCrypt                       |
+| Real-time  | Spring WebSocket + STOMP + SockJS                  |
+| Build      | Maven Wrapper                                      |
 | Deployment | Docker / Docker Compose, Render/Railway-compatible |
 
 ## Main Features
@@ -51,15 +55,15 @@ Update this section before submission.
 
 Copy `.env.example` to `.env` or configure these values in your hosting platform.
 
-| Variable | Default | Description |
-|---|---|---|
-| `PORT` | `8080` | Server port |
-| `DB_URL` | `jdbc:mysql://localhost:3306/furniture_store?...` | MySQL JDBC URL |
-| `DB_USERNAME` | `root` | Database username |
-| `DB_PASSWORD` | `root` | Database password |
-| `DDL_AUTO` | `update` | Hibernate schema strategy |
-| `JWT_SECRET` | provided fallback | JWT signing secret |
-| `UPLOAD_DIR` | `uploads` | Image upload folder |
+| Variable      | Default                                           | Description               |
+| ------------- | ------------------------------------------------- | ------------------------- |
+| `PORT`        | `8080`                                            | Server port               |
+| `DB_URL`      | `jdbc:mysql://localhost:3306/furniture_store?...` | MySQL JDBC URL            |
+| `DB_USERNAME` | `root`                                            | Database username         |
+| `DB_PASSWORD` | `root`                                            | Database password         |
+| `DDL_AUTO`    | `update`                                          | Hibernate schema strategy |
+| `JWT_SECRET`  | provided fallback                                 | JWT signing secret        |
+| `UPLOAD_DIR`  | `uploads`                                         | Image upload folder       |
 
 ## Local Setup
 
@@ -103,10 +107,10 @@ http://localhost:8080/
 
 ## Test Accounts
 
-| Role | Username | Email | Password |
-|---|---|---|---|
-| Admin | `admin` | `admin@test.com` | `Admin123!` |
-| Manager | `manager` | `manager@test.com` | `Manager123!` |
+| Role     | Username   | Email               | Password       |
+| -------- | ---------- | ------------------- | -------------- |
+| Admin    | `admin`    | `admin@test.com`    | `Admin123!`    |
+| Manager  | `manager`  | `manager@test.com`  | `Manager123!`  |
 | Customer | `customer` | `customer@test.com` | `Customer123!` |
 
 ## Useful API Examples
