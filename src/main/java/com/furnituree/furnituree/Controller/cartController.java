@@ -12,6 +12,8 @@ import org.springframework.web.bind.annotation.RestController;
 import com.furnituree.furnituree.config.JwtUtil;
 import com.furnituree.furnituree.dto.addToCartRequest;
 import com.furnituree.furnituree.dto.deleteFromCart;
+import com.furnituree.furnituree.exception.BadRequestException;
+import com.furnituree.furnituree.exception.ResourceNotFoundException;
 import com.furnituree.furnituree.model.Cart;
 import com.furnituree.furnituree.model.CartItem;
 import com.furnituree.furnituree.model.Product;
@@ -35,50 +37,42 @@ public class cartController {
         this.usRepo = usRepo;
         this.proRepo = proRepo;
         this.caitemRepo = caitemRepo;
-
     }
 
     @PostMapping("/addcart")
     public Cart addToCart(@RequestHeader("Authorization") String header, @RequestBody addToCartRequest req) {
+        User user = getUserFromHeader(header);
+        validateAddToCartRequest(req);
 
-        // This section of code is responsible for adding a user's selected product to
-        // their cart. Here's a breakdown of what it does:
-        // 1.Find user name and connect it with the cart
-        // cut out "Bearer "
-        String token = header.substring(7);
-        // "take username from tokpasswordEncoder"
-        String username = JwtUtil.extractUsername(token);
-
-        User user = usRepo.findByUsername(username);
-
-        // find if user have cart or not , if not make one , if does use that one
         Cart cart = caRepo.findByUser(user);
         if (cart == null) {
             cart = new Cart();
-
             cart.setUser(user);
-
             caRepo.save(cart);
-
-        }
-        // find the product and the productid and quantity
-        Long productId = req.getProductId();
-        Long productQuantity = req.getProductQuantity();
-        Product product = proRepo.findById(productId).orElse(null);
-        if (product == null) {
-            throw new RuntimeException("Product not found");
         }
 
-        // find the cart
+        Product product = proRepo.findById(req.getProductId())
+                .orElseThrow(() -> new ResourceNotFoundException("Product not found with id " + req.getProductId()));
+
+        Long requestedQuantity = req.getProductQuantity();
+        long stock = product.getQuantity() == null ? 0 : product.getQuantity();
+        if (stock <= 0) {
+            throw new BadRequestException("Product is out of stock");
+        }
+
         CartItem cartItem = caitemRepo.findByCartAndProduct(cart, product);
+        long currentQuantity = cartItem == null ? 0 : cartItem.getQuantity();
+        if (currentQuantity + requestedQuantity > stock) {
+            throw new BadRequestException("Cannot add more than available stock. Available stock: " + stock);
+        }
 
         if (cartItem != null) {
-            cartItem.setQuantity(cartItem.getQuantity() + productQuantity);
+            cartItem.setQuantity(currentQuantity + requestedQuantity);
         } else {
             cartItem = new CartItem();
             cartItem.setCart(cart);
             cartItem.setProduct(product);
-            cartItem.setQuantity(productQuantity);
+            cartItem.setQuantity(requestedQuantity);
             cartItem.setPrice(product.getPrice());
         }
         caitemRepo.save(cartItem);
@@ -88,62 +82,69 @@ public class cartController {
 
     @GetMapping("/getcart")
     public Cart getCart(@RequestHeader("Authorization") String header) {
-        // 1.Find user name and connect it with the cart
-        // cut out "Bearer "
-        String token = header.substring(7);
-        // "take username from tokpasswordEncoder"
-        String username = JwtUtil.extractUsername(token);
-
-        User user = usRepo.findByUsername(username);
-
-        // find if user have cart or not , if not make one , if does use that one
-        Cart cart = caRepo.findByUser(user);
-        return cart;
-
+        User user = getUserFromHeader(header);
+        return caRepo.findByUser(user);
     }
 
     @DeleteMapping("/{cartId}")
     public void deleteCart(@PathVariable Long cartId, @RequestHeader("Authorization") String header) {
-        // Extract username from token
-        String token = header.substring(7);
-        String username = JwtUtil.extractUsername(token);
-
-        User user = usRepo.findByUsername(username);
-
-        // Find the cart by user and cartId
+        User user = getUserFromHeader(header);
         Cart cart = caRepo.findByUser(user);
         if (cart == null || !cart.getCartId().equals(cartId)) {
-            throw new RuntimeException("Cart not found or unauthorized access");
+            throw new ResourceNotFoundException("Cart not found or unauthorized access");
         }
 
         caRepo.delete(cart);
     }
 
-    // DELETE CartItem
     @DeleteMapping("/item")
     public Cart deleteFromCart(@RequestHeader("Authorization") String header, @RequestBody deleteFromCart req) {
-
-        String token = header.substring(7);
-        String username = JwtUtil.extractUsername(token);
-        User user = usRepo.findByUsername(username);
+        User user = getUserFromHeader(header);
+        if (req == null || req.getProductId() == null) {
+            throw new BadRequestException("Product id is required");
+        }
 
         Cart cart = caRepo.findByUser(user);
         if (cart == null) {
-            throw new RuntimeException("Cart not found");
+            throw new ResourceNotFoundException("Cart not found");
         }
 
-        Long productId = req.getProductId();
-        Product product = proRepo.findById(productId)
-                .orElseThrow(() -> new RuntimeException("Product not found"));
+        Product product = proRepo.findById(req.getProductId())
+                .orElseThrow(() -> new ResourceNotFoundException("Product not found with id " + req.getProductId()));
 
         CartItem cartItem = caitemRepo.findByCartAndProduct(cart, product);
         if (cartItem == null) {
-            throw new RuntimeException("Item not found in cart");
+            throw new ResourceNotFoundException("Item not found in cart");
         }
 
         caitemRepo.delete(cartItem);
 
-        return caRepo.findById(cart.getCartId()).orElse(cart); // return refreshed
-        // cart
+        return caRepo.findById(cart.getCartId()).orElse(cart);
+    }
+
+    private User getUserFromHeader(String header) {
+        if (header == null || !header.startsWith("Bearer ")) {
+            throw new BadRequestException("Authorization header is missing or invalid");
+        }
+
+        String token = header.substring(7);
+        String username = JwtUtil.extractUsername(token);
+        User user = usRepo.findByUsername(username);
+        if (user == null) {
+            throw new ResourceNotFoundException("User not found");
+        }
+        return user;
+    }
+
+    private void validateAddToCartRequest(addToCartRequest req) {
+        if (req == null) {
+            throw new BadRequestException("Request body is required");
+        }
+        if (req.getProductId() == null) {
+            throw new BadRequestException("Product id is required");
+        }
+        if (req.getProductQuantity() == null || req.getProductQuantity() <= 0) {
+            throw new BadRequestException("Product quantity must be greater than 0");
+        }
     }
 }
