@@ -1,15 +1,18 @@
 const API = "http://127.0.0.1:8080/products";
 const CART_API = "http://127.0.0.1:8080/cart";
+const CATEGORY_API = "http://127.0.0.1:8080/categories";
 
 let editId = null;
 let deleteId = null;
 let viewProduct = null;
 let currentPageData = null;
+let categories = [];
 let filterState = {
   keyword: "",
   minPrice: "",
   maxPrice: "",
   stockStatus: "all",
+  categoryId: "",
   sortBy: "id",
   sortDir: "asc",
   page: 0,
@@ -44,6 +47,62 @@ function getProductName(p) {
   return p.product_name || p.productName || "Unnamed product";
 }
 
+
+function getCategoryName(p) {
+  return p.category?.name || "Uncategorized";
+}
+
+async function loadCategories() {
+  try {
+    const res = await fetch(`${CATEGORY_API}/findall`);
+    if (!res.ok) throw new Error("Failed to load categories");
+    categories = await res.json();
+    populateCategorySelects();
+  } catch (error) {
+    console.error("Category load error:", error);
+    categories = [];
+  }
+}
+
+function populateCategorySelects() {
+  const filterSelect = document.getElementById("categoryFilter");
+  const formSelect = document.getElementById("fCategory");
+  const options = categories
+    .filter((c) => (c.status || "ACTIVE") === "ACTIVE")
+    .map((c) => `<option value="${c.id}">${c.name}</option>`)
+    .join("");
+
+  if (filterSelect) {
+    filterSelect.innerHTML = `<option value="">All categories</option>${options}`;
+    filterSelect.value = filterState.categoryId || "";
+  }
+  if (formSelect) {
+    formSelect.innerHTML = `<option value="">No category</option>${options}`;
+  }
+}
+
+function validateProductPayload(payload) {
+  const errors = [];
+  if (!payload.product_name) errors.push("Product name is required");
+  if (Number.isNaN(payload.price) || payload.price < 0) errors.push("Price must be 0 or greater");
+  if (Number.isNaN(payload.quantity) || payload.quantity < 0) errors.push("Quantity must be 0 or greater");
+  if (payload.description && payload.description.length > 1000) errors.push("Description is too long");
+  if (payload.img && payload.img.length > 500) errors.push("Image URL is too long");
+  return errors;
+}
+
+async function extractErrorMessage(res) {
+  try {
+    const data = await res.json();
+    if (data.fieldErrors) {
+      return Object.values(data.fieldErrors)[0] || data.message || "Request failed";
+    }
+    return data.message || "Request failed";
+  } catch {
+    return "Request failed";
+  }
+}
+
 function buildFilterParams(includePagination = true) {
   const params = new URLSearchParams();
 
@@ -53,6 +112,7 @@ function buildFilterParams(includePagination = true) {
   if (filterState.stockStatus && filterState.stockStatus !== "all") {
     params.append("stockStatus", filterState.stockStatus);
   }
+  if (filterState.categoryId) params.append("categoryId", filterState.categoryId);
 
   params.append("sortBy", filterState.sortBy);
   params.append("sortDir", filterState.sortDir);
@@ -70,6 +130,7 @@ function readFilterInputs(resetPage = true) {
   filterState.minPrice = document.getElementById("minPrice").value;
   filterState.maxPrice = document.getElementById("maxPrice").value;
   filterState.stockStatus = document.getElementById("stockStatus").value;
+  filterState.categoryId = document.getElementById("categoryFilter")?.value || "";
   filterState.sortBy = document.getElementById("sortBy").value;
   filterState.sortDir = document.getElementById("sortDir").value;
   filterState.size = Number(document.getElementById("pageSize").value) || 10;
@@ -140,6 +201,7 @@ function resetFilters() {
   document.getElementById("minPrice").value = "";
   document.getElementById("maxPrice").value = "";
   document.getElementById("stockStatus").value = "all";
+  if (document.getElementById("categoryFilter")) document.getElementById("categoryFilter").value = "";
   document.getElementById("sortBy").value = "id";
   document.getElementById("sortDir").value = "asc";
   document.getElementById("pageSize").value = "10";
@@ -149,6 +211,7 @@ function resetFilters() {
     minPrice: "",
     maxPrice: "",
     stockStatus: "all",
+    categoryId: "",
     sortBy: "id",
     sortDir: "asc",
     page: 0,
@@ -234,7 +297,7 @@ function renderGrid(products) {
               : `<div class="card-img-placeholder" onclick="openViewFromEncoded('${productJson}')"><svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1"><rect x="3" y="10" width="18" height="8" rx="1"/><rect x="6" y="6" width="12" height="4" rx="1"/><line x1="7" y1="18" x2="7" y2="21"/><line x1="17" y1="18" x2="17" y2="21"/></svg><span>No Image</span></div>`
           }
           <div class="card-body">
-            <div class="card-tag">Furniture</div>
+            <div class="card-tag">${getCategoryName(p)}</div>
             <div class="card-name" onclick="openViewFromEncoded('${productJson}')">${name}</div>
             <div class="card-desc">${p.description || "No description available."}</div>
             <div class="card-footer">
@@ -268,16 +331,23 @@ async function handleSave() {
   const token = localStorage.getItem("token") || "";
 
   const payload = {
-    product_name: document.getElementById("fName").value,
+    product_name: document.getElementById("fName").value.trim(),
     price: parseFloat(document.getElementById("fPrice").value),
     quantity: parseInt(document.getElementById("fQty").value),
-    img: document.getElementById("fImg").value,
-    description: document.getElementById("fDesc").value,
+    img: document.getElementById("fImg").value.trim(),
+    description: document.getElementById("fDesc").value.trim(),
+    categoryId: document.getElementById("fCategory")?.value ? Number(document.getElementById("fCategory").value) : null,
   };
+
+  const validationErrors = validateProductPayload(payload);
+  if (validationErrors.length > 0) {
+    showToast(validationErrors[0], "error");
+    return;
+  }
 
   try {
     if (!editId) {
-      await fetch(`${API}/addproduct`, {
+      const res = await fetch(`${API}/addproduct`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -285,9 +355,10 @@ async function handleSave() {
         },
         body: JSON.stringify(payload),
       });
+      if (!res.ok) throw new Error(await extractErrorMessage(res));
       showToast("Product added successfully");
     } else {
-      await fetch(`${API}/update/${editId}`, {
+      const res = await fetch(`${API}/update/${editId}`, {
         method: "PUT",
         headers: {
           "Content-Type": "application/json",
@@ -295,12 +366,13 @@ async function handleSave() {
         },
         body: JSON.stringify(payload),
       });
+      if (!res.ok) throw new Error(await extractErrorMessage(res));
       showToast("Product updated");
     }
     closeFormModal();
     fetchProducts();
-  } catch {
-    showToast("Operation failed", "error");
+  } catch (error) {
+    showToast(error.message || "Operation failed", "error");
   }
 }
 
@@ -368,6 +440,7 @@ function openAdd() {
   document.getElementById("fQty").value = "";
   document.getElementById("fImg").value = "";
   document.getElementById("fDesc").value = "";
+  if (document.getElementById("fCategory")) document.getElementById("fCategory").value = "";
   document.getElementById("formTitle").textContent = "New Piece";
   document.getElementById("formSubtitle").textContent = "Add to catalog";
   document.getElementById("saveBtn").textContent = "Add to Catalog";
@@ -381,6 +454,7 @@ function openEdit(p) {
   document.getElementById("fQty").value = p.quantity || "";
   document.getElementById("fImg").value = p.img || "";
   document.getElementById("fDesc").value = p.description || "";
+  if (document.getElementById("fCategory")) document.getElementById("fCategory").value = p.category?.id || "";
   document.getElementById("formTitle").textContent = "Edit Piece";
   document.getElementById("formSubtitle").textContent = "Update details";
   document.getElementById("saveBtn").textContent = "Save Changes";
@@ -407,6 +481,7 @@ function openView(p) {
     "$" + Number(p.price || 0).toLocaleString("en-US", { minimumFractionDigits: 2 });
   document.getElementById("viewDesc").textContent = p.description || "No description.";
   document.getElementById("viewQty").textContent = (p.quantity || 0) + " units";
+  document.getElementById("viewCategory").textContent = getCategoryName(p);
   document.getElementById("viewId").textContent = "#" + p.id;
   document.getElementById("viewImgWrap").innerHTML = p.img
     ? `<img id="viewImg" src="${p.img}" style="width:100%;height:260px;object-fit:cover;display:block"/>`
@@ -435,5 +510,6 @@ function showToast(msg, type = "success") {
 
 document.addEventListener("DOMContentLoaded", async function () {
   console.log("Main page loaded!");
+  await loadCategories();
   await fetchProducts();
 });

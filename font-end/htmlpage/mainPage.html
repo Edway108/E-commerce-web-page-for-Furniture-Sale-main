@@ -69,6 +69,13 @@
             </div>
 
             <div class="control-field">
+                <label for="categoryFilter">Category</label>
+                <select id="categoryFilter">
+                    <option value="">All categories</option>
+                </select>
+            </div>
+
+            <div class="control-field">
                 <label for="sortBy">Sort by</label>
                 <select id="sortBy">
                     <option value="id">Newest / ID</option>
@@ -139,6 +146,12 @@
                     <label>Product Name</label>
                     <input id="fName" placeholder="e.g. Walnut Coffee Table" />
                 </div>
+                <div class="field">
+                    <label>Category</label>
+                    <select id="fCategory">
+                        <option value="">No category</option>
+                    </select>
+                </div>
                 <div class="form-row">
                     <div class="field">
                         <label>Price (USD)</label>
@@ -181,6 +194,7 @@
                 <div class="view-desc" id="viewDesc"></div>
                 <div class="view-meta">
                     <div class="view-meta-item"><label>Stock</label><span id="viewQty"></span></div>
+                    <div class="view-meta-item"><label>Category</label><span id="viewCategory"></span></div>
                     <div class="view-meta-item"><label>ID</label><span id="viewId"></span></div>
                 </div>
             </div>

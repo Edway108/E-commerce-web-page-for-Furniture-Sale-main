@@ -552,6 +552,7 @@
 }
 
 .field input,
+.field select,
 .field textarea {
     width: 100%;
     border: 1px solid #d9cfc0;
@@ -565,6 +566,7 @@
 }
 
 .field input:focus,
+.field select:focus,
 .field textarea:focus {
     border-color: var(--gold);
     background: var(--white);
