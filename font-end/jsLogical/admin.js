@@ -1,40 +1,44 @@
 const BASE_URL = "http://localhost:8080";
 
-/* ================= SIDEBAR ================= */
+let stockChart = null;
+let valueChart = null;
+let adminProductPage = null;
+let adminProductState = {
+  keyword: "",
+  minPrice: "",
+  maxPrice: "",
+  stockStatus: "all",
+  sortBy: "id",
+  sortDir: "asc",
+  page: 0,
+  size: 10,
+};
+
+function getProductName(p) {
+  return p.product_name || p.productName || p.name || "Unnamed product";
+}
+
 function toggleSidebar() {
   document.getElementById("sidebar").classList.toggle("collapsed");
 }
 
-/* ================= DROPDOWN ================= */
 function toggleDropdown(id, el) {
   const menu = document.getElementById(id);
   menu.classList.toggle("open");
   el.classList.toggle("open");
 }
 
-/* ================= SECTION ================= */
 function showSection(name) {
-  document
-    .querySelectorAll(".section")
-    .forEach((sec) => sec.classList.remove("active"));
-  document
-    .querySelectorAll(".nav-item")
-    .forEach((item) => item.classList.remove("active"));
+  document.querySelectorAll(".section").forEach((sec) => sec.classList.remove("active"));
+  document.querySelectorAll(".nav-item").forEach((item) => item.classList.remove("active"));
   document.getElementById(`section-${name}`).classList.add("active");
-  document.getElementById("page-title").innerText = name
-    .replace("-", " ")
-    .toUpperCase();
+  document.getElementById("page-title").innerText = name.replace("-", " ").toUpperCase();
 
   if (name === "dashboard") loadDashboard();
   if (name === "product-list") loadProducts();
   if (name === "user-list") loadUsers();
 }
 
-/* ================= MODAL ENGINE ================= */
-
-/**
- * Inject modal CSS once
- */
 function injectModalStyles() {
   if (document.getElementById("modal-styles")) return;
   const style = document.createElement("style");
@@ -81,20 +85,15 @@ function injectModalStyles() {
       font-size: 13px; color: var(--ink);
       font-family: 'DM Sans', sans-serif;
       outline: none;
-      transition: border-color 0.15s;
     }
     .modal-input:focus { border-color: var(--walnut); }
-    .modal-actions {
-      display: flex; gap: 10px;
-      margin-top: 24px;
-    }
+    .modal-actions { display: flex; gap: 10px; margin-top: 24px; }
     .btn-modal-confirm {
       flex: 1; padding: 11px;
       background: var(--walnut); color: var(--white);
       border: none; cursor: pointer;
       font-size: 12px; letter-spacing: 0.08em;
       text-transform: uppercase;
-      transition: background 0.2s;
     }
     .btn-modal-confirm:hover { background: var(--walnut-light); }
     .btn-modal-cancel {
@@ -104,20 +103,12 @@ function injectModalStyles() {
       cursor: pointer;
       font-size: 12px; letter-spacing: 0.08em;
       text-transform: uppercase;
-      transition: background 0.2s;
     }
     .btn-modal-cancel:hover { background: var(--parchment); }
   `;
   document.head.appendChild(style);
 }
 
-/**
- * Generic modal builder.
- * @param {string} title - Modal heading
- * @param {Array}  fields - [{ id, label, type?, placeholder?, value? }]
- * @param {string} confirmLabel - Text on the confirm button
- * @returns {Promise<Object|null>} - Object of { fieldId: value } or null if cancelled
- */
 function openModal(title, fields, confirmLabel = "Save") {
   injectModalStyles();
 
@@ -154,20 +145,13 @@ function openModal(title, fields, confirmLabel = "Save") {
     `;
 
     document.body.appendChild(overlay);
-
-    // Focus first input
     const firstInput = overlay.querySelector(".modal-input");
     if (firstInput) firstInput.focus();
 
-    // Close on overlay click
     overlay.addEventListener("click", (e) => {
       if (e.target === overlay) close(null);
     });
-
-    overlay
-      .querySelector("#modal-cancel")
-      .addEventListener("click", () => close(null));
-
+    overlay.querySelector("#modal-cancel").addEventListener("click", () => close(null));
     overlay.querySelector("#modal-confirm").addEventListener("click", () => {
       const result = {};
       fields.forEach((f) => {
@@ -175,12 +159,8 @@ function openModal(title, fields, confirmLabel = "Save") {
       });
       close(result);
     });
-
-    // Keyboard: Enter = confirm, Esc = cancel
     overlay.addEventListener("keydown", (e) => {
-      if (e.key === "Enter") {
-        overlay.querySelector("#modal-confirm").click();
-      }
+      if (e.key === "Enter") overlay.querySelector("#modal-confirm").click();
       if (e.key === "Escape") close(null);
     });
 
@@ -191,78 +171,65 @@ function openModal(title, fields, confirmLabel = "Save") {
   });
 }
 
-/* ================= DASHBOARD ================= */
 async function loadDashboard() {
-  const [prodRes, userRes] = await Promise.all([
-    fetch(`${BASE_URL}/products/findall`),
+  const [dashRes, userRes, productRes] = await Promise.all([
+    fetch(`${BASE_URL}/products/dashboard`),
     fetch(`${BASE_URL}/users/findall`),
+    fetch(`${BASE_URL}/products/filter?page=0&size=5&sortBy=id&sortDir=desc`),
   ]);
-  const products = await prodRes.json();
+
+  const dashboard = await dashRes.json();
   const users = await userRes.json();
-
-  const totalProducts = products.length;
-  const totalUsers = users.length;
-  const totalStock = products.reduce(
-    (s, p) => s + (Number(p.quantity) || 0),
-    0
-  );
-  const outOfStock = products.filter((p) => Number(p.quantity) === 0).length;
-
-  // 5 most recent products (last in array = newest by ID)
-  const recent = [...products].reverse().slice(0, 5);
+  const recentProductsPage = await productRes.json();
+  const recentProducts = recentProductsPage.content || [];
 
   const section = document.getElementById("section-dashboard");
   section.innerHTML = `
-    <h1>Dashboard</h1>
-
-    <div class="stat-grid">
-      <div class="stat-card">
-        <div class="stat-label">Total Products</div>
-        <div class="stat-value">${totalProducts}</div>
+    <div class="dashboard-header">
+      <div>
+        <h1>Dashboard</h1>
+        <p class="dashboard-subtitle">Product stock, inventory value and report export.</p>
       </div>
-      <div class="stat-card">
-        <div class="stat-label">Total Users</div>
-        <div class="stat-value">${totalUsers}</div>
-      </div>
-      <div class="stat-card">
-        <div class="stat-label">Items in Stock</div>
-        <div class="stat-value">${totalStock.toLocaleString()}</div>
-      </div>
-      <div class="stat-card">
-        <div class="stat-label">Out of Stock</div>
-        <div class="stat-value" style="color:var(--danger)">${outOfStock}</div>
+      <div class="dashboard-actions">
+        <button class="btn-add" onclick="downloadProductReport()">Export Product CSV</button>
+        <button class="btn-add" onclick="logout()">Log out</button>
       </div>
     </div>
 
-    <h2 style="font-family:'Cormorant Garamond',serif;font-size:24px;font-weight:300;color:var(--walnut);margin-bottom:16px;">
-      Recent Products
-    </h2>
+    <div class="stat-grid">
+      <div class="stat-card"><div class="stat-label">Total Products</div><div class="stat-value">${dashboard.totalProducts}</div></div>
+      <div class="stat-card"><div class="stat-label">Total Users</div><div class="stat-value">${users.length}</div></div>
+      <div class="stat-card"><div class="stat-label">Items in Stock</div><div class="stat-value">${Number(dashboard.totalStock || 0).toLocaleString()}</div></div>
+      <div class="stat-card"><div class="stat-label">Inventory Value</div><div class="stat-value">$${Number(dashboard.inventoryValue || 0).toLocaleString()}</div></div>
+      <div class="stat-card"><div class="stat-label">Low Stock</div><div class="stat-value" style="color:var(--clay)">${dashboard.lowStock}</div></div>
+      <div class="stat-card"><div class="stat-label">Out of Stock</div><div class="stat-value" style="color:var(--danger)">${dashboard.outOfStock}</div></div>
+    </div>
+
+    <div class="chart-grid">
+      <div class="chart-card">
+        <h2>Stock Status</h2>
+        <canvas id="stockChart"></canvas>
+      </div>
+      <div class="chart-card">
+        <h2>Top Inventory Value</h2>
+        <canvas id="valueChart"></canvas>
+      </div>
+    </div>
+
+    <h2 class="section-subheading">Recent Products</h2>
     <table class="data-table">
       <thead>
-        <tr>
-          <th style="width:68px">Image</th>
-          <th>Name</th>
-          <th>Price</th>
-          <th>Quantity</th>
-        </tr>
+        <tr><th style="width:68px">Image</th><th>Name</th><th>Price</th><th>Quantity</th></tr>
       </thead>
       <tbody>
-        ${recent
+        ${recentProducts
           .map(
             (p) => `
           <tr>
-            <td>
-              ${
-                p.img
-                  ? `<img src="${p.img}" alt="${p.productName}"
-                      style="width:48px;height:48px;object-fit:cover;border:1px solid #e0d8cc;display:block;"
-                      onerror="this.replaceWith(noImg())" />`
-                  : `<div style="width:48px;height:48px;background:var(--parchment);border:1px solid #e0d8cc;"></div>`
-              }
-            </td>
-            <td>${p.productName}</td>
-            <td>${p.price.toLocaleString()}</td>
-            <td>${p.quantity}</td>
+            <td>${renderProductImage(p, 48)}</td>
+            <td>${getProductName(p)}</td>
+            <td>$${Number(p.price || 0).toLocaleString()}</td>
+            <td>${p.quantity || 0}</td>
           </tr>
         `
           )
@@ -270,76 +237,248 @@ async function loadDashboard() {
       </tbody>
     </table>
   `;
+
+  renderDashboardCharts(dashboard);
 }
 
-/* ================= LOAD PRODUCTS ================= */
-async function loadProducts() {
-  const res = await fetch(`${BASE_URL}/products/findall`);
-  const data = await res.json();
+function renderDashboardCharts(dashboard) {
+  if (typeof Chart === "undefined") {
+    document.getElementById("stockChart").replaceWith("Chart.js did not load. Please check internet connection.");
+    document.getElementById("valueChart").replaceWith("Chart.js did not load. Please check internet connection.");
+    return;
+  }
 
-  const section = document.getElementById("section-product-list");
+  if (stockChart) stockChart.destroy();
+  if (valueChart) valueChart.destroy();
 
-  let html = `
-    <h1>Products</h1>
-    <button class="btn-add" onclick="openAddModal('product')">+ Add Product</button>
-    <table class="data-table">
-      <thead>
-        <tr>
-          <th style="width:72px">Image</th>
-          <th>ID</th>
-          <th>Name</th>
-          <th>Price</th>
-          <th>Quantity</th>
-          <th>Action</th>
-        </tr>
-      </thead>
-      <tbody>
-  `;
-
-  data.forEach((p) => {
-    const imgCell = p.img
-      ? `<img src="${p.img}" alt="${p.productName}"
-            style="width:52px;height:52px;object-fit:cover;border:1px solid #e0d8cc;display:block;"
-            onerror="this.replaceWith(noImg())" />`
-      : `<div style="width:52px;height:52px;background:var(--parchment);border:1px solid #e0d8cc;"></div>`;
-
-    html += `
-      <tr>
-        <td>${imgCell}</td>
-        <td>${p.id}</td>
-        <td>${p.productName}</td>
-        <td>${p.price}</td>
-        <td>${p.quantity}</td>
-        <td>
-          <button onclick="editProduct(${p.id})">Edit</button>
-          <button onclick="deleteProduct(${p.id})">Delete</button>
-        </td>
-      </tr>
-    `;
+  const stockSummary = dashboard.stockSummary || {};
+  stockChart = new Chart(document.getElementById("stockChart"), {
+    type: "bar",
+    data: {
+      labels: ["Available", "Low Stock", "Out of Stock"],
+      datasets: [
+        {
+          label: "Product count",
+          data: [stockSummary.available || 0, stockSummary.lowStock || 0, stockSummary.outOfStock || 0],
+        },
+      ],
+    },
+    options: {
+      responsive: true,
+      plugins: { legend: { display: false } },
+      scales: { y: { beginAtZero: true, ticks: { precision: 0 } } },
+    },
   });
 
-  html += `</tbody></table>`;
-  section.innerHTML = html;
+  const topValue = dashboard.highestValueProducts || [];
+  valueChart = new Chart(document.getElementById("valueChart"), {
+    type: "bar",
+    data: {
+      labels: topValue.map((p) => p.name),
+      datasets: [
+        {
+          label: "Inventory value",
+          data: topValue.map((p) => Number(p.inventoryValue || 0)),
+        },
+      ],
+    },
+    options: {
+      responsive: true,
+      plugins: { legend: { display: false } },
+      scales: { y: { beginAtZero: true } },
+    },
+  });
 }
 
-function noImg() {
+function buildAdminProductParams(includePagination = true) {
+  const params = new URLSearchParams();
+  if (adminProductState.keyword) params.append("keyword", adminProductState.keyword);
+  if (adminProductState.minPrice !== "") params.append("minPrice", adminProductState.minPrice);
+  if (adminProductState.maxPrice !== "") params.append("maxPrice", adminProductState.maxPrice);
+  if (adminProductState.stockStatus !== "all") params.append("stockStatus", adminProductState.stockStatus);
+  params.append("sortBy", adminProductState.sortBy);
+  params.append("sortDir", adminProductState.sortDir);
+  if (includePagination) {
+    params.append("page", adminProductState.page);
+    params.append("size", adminProductState.size);
+  }
+  return params;
+}
+
+function readAdminProductFilters(resetPage = true) {
+  adminProductState.keyword = document.getElementById("adminProductKeyword")?.value.trim() || "";
+  adminProductState.minPrice = document.getElementById("adminMinPrice")?.value || "";
+  adminProductState.maxPrice = document.getElementById("adminMaxPrice")?.value || "";
+  adminProductState.stockStatus = document.getElementById("adminStockStatus")?.value || "all";
+  adminProductState.sortBy = document.getElementById("adminSortBy")?.value || "id";
+  adminProductState.sortDir = document.getElementById("adminSortDir")?.value || "asc";
+  adminProductState.size = Number(document.getElementById("adminPageSize")?.value || 10);
+  if (resetPage) adminProductState.page = 0;
+}
+
+async function loadProducts() {
+  const res = await fetch(`${BASE_URL}/products/filter?${buildAdminProductParams(true)}`);
+  const pageData = await res.json();
+  adminProductPage = pageData;
+
+  const section = document.getElementById("section-product-list");
+  const products = pageData.content || [];
+
+  section.innerHTML = `
+    <h1>Products</h1>
+    <div class="admin-toolbar">
+      <div class="admin-filter-grid">
+        <input id="adminProductKeyword" placeholder="Search name or description" value="${adminProductState.keyword}" onkeydown="if(event.key === 'Enter') applyAdminProductFilters()">
+        <input id="adminMinPrice" type="number" placeholder="Min price" value="${adminProductState.minPrice}">
+        <input id="adminMaxPrice" type="number" placeholder="Max price" value="${adminProductState.maxPrice}">
+        <select id="adminStockStatus">
+          <option value="all" ${adminProductState.stockStatus === "all" ? "selected" : ""}>All stock</option>
+          <option value="inStock" ${adminProductState.stockStatus === "inStock" ? "selected" : ""}>In stock</option>
+          <option value="lowStock" ${adminProductState.stockStatus === "lowStock" ? "selected" : ""}>Low stock</option>
+          <option value="outOfStock" ${adminProductState.stockStatus === "outOfStock" ? "selected" : ""}>Out of stock</option>
+        </select>
+        <select id="adminSortBy">
+          <option value="id" ${adminProductState.sortBy === "id" ? "selected" : ""}>Sort: ID</option>
+          <option value="productName" ${adminProductState.sortBy === "productName" ? "selected" : ""}>Sort: Name</option>
+          <option value="price" ${adminProductState.sortBy === "price" ? "selected" : ""}>Sort: Price</option>
+          <option value="quantity" ${adminProductState.sortBy === "quantity" ? "selected" : ""}>Sort: Quantity</option>
+        </select>
+        <select id="adminSortDir">
+          <option value="asc" ${adminProductState.sortDir === "asc" ? "selected" : ""}>Ascending</option>
+          <option value="desc" ${adminProductState.sortDir === "desc" ? "selected" : ""}>Descending</option>
+        </select>
+        <select id="adminPageSize" onchange="updateAdminProductPageSize()">
+          <option value="10" ${adminProductState.size === 10 ? "selected" : ""}>10/page</option>
+          <option value="20" ${adminProductState.size === 20 ? "selected" : ""}>20/page</option>
+          <option value="50" ${adminProductState.size === 50 ? "selected" : ""}>50/page</option>
+          <option value="100" ${adminProductState.size === 100 ? "selected" : ""}>100/page</option>
+        </select>
+      </div>
+      <div class="admin-toolbar-actions">
+        <button class="btn-add" onclick="applyAdminProductFilters()">Apply</button>
+        <button class="btn-add" onclick="resetAdminProductFilters()">Reset</button>
+        <button class="btn-add" onclick="openAddModal('product')">+ Add Product</button>
+        <button class="btn-add" onclick="downloadProductReport()">Export CSV</button>
+      </div>
+      <div class="admin-result-stats">${formatPageStats(pageData)}</div>
+    </div>
+
+    <table class="data-table">
+      <thead>
+        <tr><th style="width:72px">Image</th><th>ID</th><th>Name</th><th>Price</th><th>Quantity</th><th>Inventory Value</th><th>Action</th></tr>
+      </thead>
+      <tbody>
+        ${products
+          .map(
+            (p) => `
+          <tr>
+            <td>${renderProductImage(p, 52)}</td>
+            <td>${p.id}</td>
+            <td>${getProductName(p)}</td>
+            <td>$${Number(p.price || 0).toLocaleString()}</td>
+            <td>${p.quantity || 0}</td>
+            <td>$${(Number(p.price || 0) * Number(p.quantity || 0)).toLocaleString()}</td>
+            <td>
+              <button onclick="editProduct(${p.id})">Edit</button>
+              <button onclick="deleteProduct(${p.id})">Delete</button>
+            </td>
+          </tr>
+        `
+          )
+          .join("")}
+      </tbody>
+    </table>
+    <div class="admin-pagination">${renderAdminPagination(pageData)}</div>
+  `;
+}
+
+function formatPageStats(pageData) {
+  const total = pageData.totalElements || 0;
+  const number = pageData.number || 0;
+  const size = pageData.size || adminProductState.size;
+  const count = pageData.numberOfElements || 0;
+  const start = total === 0 ? 0 : number * size + 1;
+  const end = total === 0 ? 0 : start + count - 1;
+  return total === 0 ? "Showing 0 products" : `Showing ${start}-${end} of ${total} products`;
+}
+
+function renderAdminPagination(pageData) {
+  const totalPages = pageData.totalPages || 0;
+  if (totalPages <= 1) return "";
+  const pageNumber = pageData.number || 0;
+  let html = `<button onclick="changeAdminProductPage(${pageNumber - 1})" ${pageData.first ? "disabled" : ""}>Prev</button>`;
+  for (let i = 0; i < totalPages; i++) {
+    if (i < 2 || i >= totalPages - 2 || Math.abs(i - pageNumber) <= 1) {
+      html += `<button class="${i === pageNumber ? "active" : ""}" onclick="changeAdminProductPage(${i})">${i + 1}</button>`;
+    } else if (i === 2 || i === totalPages - 3) {
+      html += `<span>...</span>`;
+    }
+  }
+  html += `<button onclick="changeAdminProductPage(${pageNumber + 1})" ${pageData.last ? "disabled" : ""}>Next</button>`;
+  return html;
+}
+
+function applyAdminProductFilters() {
+  readAdminProductFilters(true);
+  loadProducts();
+}
+
+function updateAdminProductPageSize() {
+  readAdminProductFilters(true);
+  loadProducts();
+}
+
+function resetAdminProductFilters() {
+  adminProductState = {
+    keyword: "",
+    minPrice: "",
+    maxPrice: "",
+    stockStatus: "all",
+    sortBy: "id",
+    sortDir: "asc",
+    page: 0,
+    size: 10,
+  };
+  loadProducts();
+}
+
+function changeAdminProductPage(page) {
+  if (!adminProductPage) return;
+  if (page < 0 || page >= adminProductPage.totalPages) return;
+  adminProductState.page = page;
+  loadProducts();
+}
+
+function downloadProductReport() {
+  const params = buildAdminProductParams(false);
+  const url = `${BASE_URL}/products/export?${params}`;
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = "product-report.csv";
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+}
+
+function renderProductImage(p, size) {
+  if (!p.img) {
+    return `<div style="width:${size}px;height:${size}px;background:var(--parchment);border:1px solid #e0d8cc;"></div>`;
+  }
+  return `<img src="${p.img}" alt="${getProductName(p)}" style="width:${size}px;height:${size}px;object-fit:cover;border:1px solid #e0d8cc;display:block;" onerror="this.replaceWith(noImg(${size}))" />`;
+}
+
+function noImg(size = 52) {
   const d = document.createElement("div");
-  d.style.cssText =
-    "width:52px;height:52px;background:var(--parchment);border:1px solid #e0d8cc;";
+  d.style.cssText = `width:${size}px;height:${size}px;background:var(--parchment);border:1px solid #e0d8cc;`;
   return d;
 }
 
-/* ================= DELETE PRODUCT ================= */
 async function deleteProduct(id) {
-  if (!(await confirmModal("Are you sure you want to delete this product?")))
-    return;
+  if (!(await confirmModal("Are you sure you want to delete this product?"))) return;
   await fetch(`${BASE_URL}/products/${id}`, { method: "DELETE" });
   loadProducts();
 }
 
-/**
- * Lightweight confirm-only modal (no input fields).
- */
 function confirmModal(message) {
   injectModalStyles();
   return new Promise((resolve) => {
@@ -364,16 +503,9 @@ function confirmModal(message) {
       overlay.remove();
       resolve(true);
     });
-    overlay.addEventListener("keydown", (e) => {
-      if (e.key === "Escape") {
-        overlay.remove();
-        resolve(false);
-      }
-    });
   });
 }
 
-/* ================= EDIT PRODUCT ================= */
 async function editProduct(id) {
   const res = await fetch(`${BASE_URL}/products/${id}`);
   const p = await res.json();
@@ -381,16 +513,11 @@ async function editProduct(id) {
   const data = await openModal(
     "Edit Product",
     [
-      { id: "product_name", label: "Name", value: p.productName },
+      { id: "product_name", label: "Name", value: getProductName(p) },
       { id: "price", label: "Price", value: p.price, type: "number" },
       { id: "quantity", label: "Quantity", value: p.quantity, type: "number" },
       { id: "description", label: "Description", value: p.description },
-      {
-        id: "img",
-        label: "Image URL",
-        value: p.img,
-        placeholder: "https://...",
-      },
+      { id: "img", label: "Image URL", value: p.img, placeholder: "https://..." },
     ],
     "Save Changes"
   );
@@ -412,43 +539,35 @@ async function editProduct(id) {
   loadProducts();
 }
 
-/* ================= LOAD USERS ================= */
 async function loadUsers() {
   const res = await fetch(`${BASE_URL}/users/findall`);
   const data = await res.json();
 
   const section = document.getElementById("section-user-list");
-
-  let html = `
+  section.innerHTML = `
     <h1>Users</h1>
     <button class="btn-add" onclick="openAddModal('user')">+ Add User</button>
     <table class="data-table">
-      <thead>
-        <tr>
-          <th>ID</th><th>Username</th><th>Phone</th><th>Action</th>
-        </tr>
-      </thead>
+      <thead><tr><th>ID</th><th>Username</th><th>Phone</th><th>Role</th><th>Action</th></tr></thead>
       <tbody>
+        ${data
+          .map(
+            (u) => `
+          <tr>
+            <td>${u.userId}</td>
+            <td>${u.username}</td>
+            <td>${u.phonenumber || ""}</td>
+            <td>${u.role || ""}</td>
+            <td><button onclick="editUser(${u.userId})">Edit</button></td>
+          </tr>
+        `
+          )
+          .join("")}
+      </tbody>
+    </table>
   `;
-
-  data.forEach((u) => {
-    html += `
-      <tr>
-        <td>${u.userId}</td>
-        <td>${u.username}</td>
-        <td>${u.phonenumber || ""}</td>
-        <td>
-          <button onclick="editUser(${u.userId})">Edit</button>
-        </td>
-      </tr>
-    `;
-  });
-
-  html += `</tbody></table>`;
-  section.innerHTML = html;
 }
 
-/* ================= EDIT USER ================= */
 async function editUser(id) {
   const data = await openModal(
     "Edit User",
@@ -472,24 +591,15 @@ async function editUser(id) {
   loadUsers();
 }
 
-/* ================= ADD MODAL ================= */
 async function openAddModal(type) {
   if (type === "product") {
     const data = await openModal(
       "Add Product",
       [
-        {
-          id: "product_name",
-          label: "Product name",
-          placeholder: "e.g. Walnut Coffee Table",
-        },
+        { id: "product_name", label: "Product name", placeholder: "e.g. Walnut Coffee Table" },
         { id: "price", label: "Price", type: "number", placeholder: "0.00" },
         { id: "quantity", label: "Quantity", type: "number", placeholder: "0" },
-        {
-          id: "description",
-          label: "Description",
-          placeholder: "Short description...",
-        },
+        { id: "description", label: "Description", placeholder: "Short description..." },
         { id: "img", label: "Image URL", placeholder: "https://..." },
       ],
       "Add Product"
@@ -535,12 +645,12 @@ async function openAddModal(type) {
     loadUsers();
   }
 }
+
 function logout() {
-  localStorage.removeItem("user");
-  localStorage.clear;
+  localStorage.clear();
   window.location = "login.html";
 }
-/* ================= INIT ================= */
+
 window.onload = () => {
   showSection("dashboard");
 };
