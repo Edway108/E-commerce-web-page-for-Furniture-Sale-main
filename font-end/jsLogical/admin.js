@@ -1,13 +1,16 @@
 const BASE_URL = "http://localhost:8080";
+const CATEGORY_API = `${BASE_URL}/categories`;
 
 let stockChart = null;
 let valueChart = null;
 let adminProductPage = null;
+let adminCategories = [];
 let adminProductState = {
   keyword: "",
   minPrice: "",
   maxPrice: "",
   stockStatus: "all",
+  categoryId: "",
   sortBy: "id",
   sortDir: "asc",
   page: 0,
@@ -36,6 +39,7 @@ function showSection(name) {
 
   if (name === "dashboard") loadDashboard();
   if (name === "product-list") loadProducts();
+  if (name === "category-list") loadCategories();
   if (name === "user-list") loadUsers();
 }
 
@@ -109,6 +113,30 @@ function injectModalStyles() {
   document.head.appendChild(style);
 }
 
+
+function renderModalFieldControl(f) {
+  if (f.type === "select") {
+    const opts = (f.options || [])
+      .map((opt) => `<option value="${opt.value}" ${String(opt.value) === String(f.value || "") ? "selected" : ""}>${opt.label}</option>`)
+      .join("");
+    return `<select class="modal-input" id="mf-${f.id}">${opts}</select>`;
+  }
+
+  if (f.type === "textarea") {
+    return `<textarea class="modal-input" id="mf-${f.id}" placeholder="${f.placeholder || ""}">${f.value || ""}</textarea>`;
+  }
+
+  return `
+    <input
+      class="modal-input"
+      id="mf-${f.id}"
+      type="${f.type || "text"}"
+      placeholder="${f.placeholder || ""}"
+      value="${f.value || ""}"
+    />
+  `;
+}
+
 function openModal(title, fields, confirmLabel = "Save") {
   injectModalStyles();
 
@@ -121,13 +149,7 @@ function openModal(title, fields, confirmLabel = "Save") {
         (f) => `
       <div class="modal-field">
         <label class="modal-label" for="mf-${f.id}">${f.label}</label>
-        <input
-          class="modal-input"
-          id="mf-${f.id}"
-          type="${f.type || "text"}"
-          placeholder="${f.placeholder || ""}"
-          value="${f.value || ""}"
-        />
+        ${renderModalFieldControl(f)}
       </div>
     `
       )
@@ -219,7 +241,7 @@ async function loadDashboard() {
     <h2 class="section-subheading">Recent Products</h2>
     <table class="data-table">
       <thead>
-        <tr><th style="width:68px">Image</th><th>Name</th><th>Price</th><th>Quantity</th></tr>
+        <tr><th style="width:68px">Image</th><th>Name</th><th>Category</th><th>Price</th><th>Quantity</th></tr>
       </thead>
       <tbody>
         ${recentProducts
@@ -228,6 +250,7 @@ async function loadDashboard() {
           <tr>
             <td>${renderProductImage(p, 48)}</td>
             <td>${getProductName(p)}</td>
+            <td>${getCategoryName(p)}</td>
             <td>$${Number(p.price || 0).toLocaleString()}</td>
             <td>${p.quantity || 0}</td>
           </tr>
@@ -296,6 +319,7 @@ function buildAdminProductParams(includePagination = true) {
   if (adminProductState.minPrice !== "") params.append("minPrice", adminProductState.minPrice);
   if (adminProductState.maxPrice !== "") params.append("maxPrice", adminProductState.maxPrice);
   if (adminProductState.stockStatus !== "all") params.append("stockStatus", adminProductState.stockStatus);
+  if (adminProductState.categoryId) params.append("categoryId", adminProductState.categoryId);
   params.append("sortBy", adminProductState.sortBy);
   params.append("sortDir", adminProductState.sortDir);
   if (includePagination) {
@@ -310,6 +334,7 @@ function readAdminProductFilters(resetPage = true) {
   adminProductState.minPrice = document.getElementById("adminMinPrice")?.value || "";
   adminProductState.maxPrice = document.getElementById("adminMaxPrice")?.value || "";
   adminProductState.stockStatus = document.getElementById("adminStockStatus")?.value || "all";
+  adminProductState.categoryId = document.getElementById("adminCategoryFilter")?.value || "";
   adminProductState.sortBy = document.getElementById("adminSortBy")?.value || "id";
   adminProductState.sortDir = document.getElementById("adminSortDir")?.value || "asc";
   adminProductState.size = Number(document.getElementById("adminPageSize")?.value || 10);
@@ -317,8 +342,8 @@ function readAdminProductFilters(resetPage = true) {
 }
 
 async function loadProducts() {
-  const res = await fetch(`${BASE_URL}/products/filter?${buildAdminProductParams(true)}`);
-  const pageData = await res.json();
+  await ensureCategoriesLoaded();
+  const pageData = await fetchJsonOrThrow(`${BASE_URL}/products/filter?${buildAdminProductParams(true)}`);
   adminProductPage = pageData;
 
   const section = document.getElementById("section-product-list");
@@ -336,6 +361,10 @@ async function loadProducts() {
           <option value="inStock" ${adminProductState.stockStatus === "inStock" ? "selected" : ""}>In stock</option>
           <option value="lowStock" ${adminProductState.stockStatus === "lowStock" ? "selected" : ""}>Low stock</option>
           <option value="outOfStock" ${adminProductState.stockStatus === "outOfStock" ? "selected" : ""}>Out of stock</option>
+        </select>
+        <select id="adminCategoryFilter">
+          <option value="">All categories</option>
+          ${adminCategories.map((c) => `<option value="${c.id}" ${String(adminProductState.categoryId) === String(c.id) ? "selected" : ""}>${c.name}</option>`).join("")}
         </select>
         <select id="adminSortBy">
           <option value="id" ${adminProductState.sortBy === "id" ? "selected" : ""}>Sort: ID</option>
@@ -365,7 +394,7 @@ async function loadProducts() {
 
     <table class="data-table">
       <thead>
-        <tr><th style="width:72px">Image</th><th>ID</th><th>Name</th><th>Price</th><th>Quantity</th><th>Inventory Value</th><th>Action</th></tr>
+        <tr><th style="width:72px">Image</th><th>ID</th><th>Name</th><th>Category</th><th>Price</th><th>Quantity</th><th>Inventory Value</th><th>Action</th></tr>
       </thead>
       <tbody>
         ${products
@@ -375,6 +404,7 @@ async function loadProducts() {
             <td>${renderProductImage(p, 52)}</td>
             <td>${p.id}</td>
             <td>${getProductName(p)}</td>
+            <td>${getCategoryName(p)}</td>
             <td>$${Number(p.price || 0).toLocaleString()}</td>
             <td>${p.quantity || 0}</td>
             <td>$${(Number(p.price || 0) * Number(p.quantity || 0)).toLocaleString()}</td>
@@ -434,6 +464,7 @@ function resetAdminProductFilters() {
     minPrice: "",
     maxPrice: "",
     stockStatus: "all",
+    categoryId: "",
     sortBy: "id",
     sortDir: "asc",
     page: 0,
@@ -473,6 +504,83 @@ function noImg(size = 52) {
   return d;
 }
 
+
+function getCategoryName(p) {
+  return p.category?.name || "Uncategorized";
+}
+
+function categoryOptions(includeEmpty = true) {
+  const activeCategories = adminCategories.filter((c) => (c.status || "ACTIVE") === "ACTIVE");
+  const options = activeCategories.map((c) => ({ value: String(c.id), label: c.name }));
+  return includeEmpty ? [{ value: "", label: "No category" }, ...options] : options;
+}
+
+async function fetchJsonOrThrow(url, options = {}) {
+  const res = await fetch(url, options);
+  if (!res.ok) {
+    throw new Error(await extractErrorMessage(res));
+  }
+  if (res.status === 204) return null;
+  return res.json();
+}
+
+async function extractErrorMessage(res) {
+  try {
+    const data = await res.json();
+    if (data.fieldErrors) {
+      return Object.values(data.fieldErrors)[0] || data.message || "Request failed";
+    }
+    return data.message || "Request failed";
+  } catch {
+    return "Request failed";
+  }
+}
+
+function validateProductInput(data) {
+  const errors = [];
+
+  if (!data.product_name || !data.product_name.trim()) {
+    errors.push("Product name is required");
+  }
+
+  if (data.price === "" || data.price === null || isNaN(Number(data.price))) {
+    errors.push("Price is required");
+  } else if (Number(data.price) < 0) {
+    errors.push("Price must be 0 or greater");
+  }
+
+  if (data.quantity === "" || data.quantity === null || isNaN(Number(data.quantity))) {
+    errors.push("Quantity is required");
+  } else if (Number(data.quantity) < 0) {
+    errors.push("Quantity must be 0 or greater");
+  }
+
+  if (!data.categoryId) {
+    errors.push("Category is required");
+  }
+
+  return errors.length > 0 ? errors.join("\n") : null;
+}
+
+function validateCategoryInput(data) {
+  if (!data.name || !data.name.trim()) return "Category name is required";
+  if (data.name.length > 120) return "Category name is too long";
+  if (data.description && data.description.length > 500) return "Description is too long";
+  if (data.imageUrl && data.imageUrl.length > 500) return "Image URL is too long";
+  return null;
+}
+
+function showAdminMessage(message, type = "info") {
+  const existing = document.getElementById("admin-message");
+  if (existing) existing.remove();
+  const box = document.createElement("div");
+  box.id = "admin-message";
+  box.className = `admin-message ${type}`;
+  box.textContent = message;
+  document.querySelector(".main-content").prepend(box);
+  setTimeout(() => box.remove(), 3500);
+}
+
 async function deleteProduct(id) {
   if (!(await confirmModal("Are you sure you want to delete this product?"))) return;
   await fetch(`${BASE_URL}/products/${id}`, { method: "DELETE" });
@@ -507,13 +615,14 @@ function confirmModal(message) {
 }
 
 async function editProduct(id) {
-  const res = await fetch(`${BASE_URL}/products/${id}`);
-  const p = await res.json();
+  await ensureCategoriesLoaded();
+  const p = await fetchJsonOrThrow(`${BASE_URL}/products/${id}`);
 
   const data = await openModal(
     "Edit Product",
     [
       { id: "product_name", label: "Name", value: getProductName(p) },
+      { id: "categoryId", label: "Category", type: "select", value: p.category?.id || "", options: categoryOptions(true) },
       { id: "price", label: "Price", value: p.price, type: "number" },
       { id: "quantity", label: "Quantity", value: p.quantity, type: "number" },
       { id: "description", label: "Description", value: p.description },
@@ -523,20 +632,119 @@ async function editProduct(id) {
   );
 
   if (!data) return;
+  const error = validateProductInput(data);
+  if (error) return showAdminMessage(error, "error");
 
-  await fetch(`${BASE_URL}/products/update/${id}`, {
-    method: "PUT",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({
-      product_name: data.product_name,
-      price: data.price,
-      quantity: data.quantity,
-      description: data.description,
-      img: data.img,
-    }),
-  });
+  try {
+    await fetchJsonOrThrow(`${BASE_URL}/products/update/${id}`, {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        product_name: data.product_name.trim(),
+        price: Number(data.price),
+        quantity: Number(data.quantity),
+        description: data.description,
+        img: data.img,
+        categoryId: data.categoryId ? Number(data.categoryId) : null,
+      }),
+    });
+    showAdminMessage("Product updated", "success");
+    loadProducts();
+  } catch (error) {
+    showAdminMessage(error.message, "error");
+  }
+}
 
-  loadProducts();
+
+async function ensureCategoriesLoaded() {
+  if (adminCategories.length > 0) return;
+  adminCategories = await fetchJsonOrThrow(`${CATEGORY_API}/findall`);
+}
+
+async function loadCategories() {
+  const section = document.getElementById("section-category-list");
+  try {
+    adminCategories = await fetchJsonOrThrow(`${CATEGORY_API}/findall`);
+    section.innerHTML = `
+      <h1>Categories</h1>
+      <button class="btn-add" onclick="openAddModal('category')">+ Add Category</button>
+      <table class="data-table">
+        <thead><tr><th>ID</th><th>Name</th><th>Status</th><th>Description</th><th>Action</th></tr></thead>
+        <tbody>
+          ${adminCategories
+            .map(
+              (c) => `
+            <tr>
+              <td>${c.id}</td>
+              <td>${c.name}</td>
+              <td>${c.status || "ACTIVE"}</td>
+              <td>${c.description || ""}</td>
+              <td>
+                <button onclick="editCategory(${c.id})">Edit</button>
+                <button onclick="deleteCategory(${c.id})">Delete</button>
+              </td>
+            </tr>
+          `
+            )
+            .join("")}
+        </tbody>
+      </table>
+    `;
+  } catch (error) {
+    section.innerHTML = `<h1>Categories</h1><p class="admin-result-stats">${error.message}</p>`;
+  }
+}
+
+async function editCategory(id) {
+  const category = await fetchJsonOrThrow(`${CATEGORY_API}/${id}`);
+  const data = await openModal(
+    "Edit Category",
+    [
+      { id: "name", label: "Category name", value: category.name },
+      { id: "description", label: "Description", value: category.description || "" },
+      { id: "imageUrl", label: "Image URL", value: category.imageUrl || "", placeholder: "https://..." },
+      {
+        id: "status",
+        label: "Status",
+        type: "select",
+        value: category.status || "ACTIVE",
+        options: [
+          { value: "ACTIVE", label: "ACTIVE" },
+          { value: "INACTIVE", label: "INACTIVE" },
+        ],
+      },
+    ],
+    "Save Changes"
+  );
+
+  if (!data) return;
+  const error = validateCategoryInput(data);
+  if (error) return showAdminMessage(error, "error");
+
+  try {
+    await fetchJsonOrThrow(`${CATEGORY_API}/update/${id}`, {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(data),
+    });
+    showAdminMessage("Category updated", "success");
+    adminCategories = [];
+    loadCategories();
+  } catch (error) {
+    showAdminMessage(error.message, "error");
+  }
+}
+
+async function deleteCategory(id) {
+  if (!(await confirmModal("Are you sure you want to delete this category?"))) return;
+  try {
+    await fetchJsonOrThrow(`${CATEGORY_API}/${id}`, { method: "DELETE" });
+    showAdminMessage("Category deleted", "success");
+    adminCategories = [];
+    loadCategories();
+  } catch (error) {
+    showAdminMessage(error.message, "error");
+  }
 }
 
 async function loadUsers() {
@@ -593,10 +801,12 @@ async function editUser(id) {
 
 async function openAddModal(type) {
   if (type === "product") {
+    await ensureCategoriesLoaded();
     const data = await openModal(
       "Add Product",
       [
         { id: "product_name", label: "Product name", placeholder: "e.g. Walnut Coffee Table" },
+        { id: "categoryId", label: "Category", type: "select", options: categoryOptions(true) },
         { id: "price", label: "Price", type: "number", placeholder: "0.00" },
         { id: "quantity", label: "Quantity", type: "number", placeholder: "0" },
         { id: "description", label: "Description", placeholder: "Short description..." },
@@ -606,20 +816,66 @@ async function openAddModal(type) {
     );
 
     if (!data) return;
+    const error = validateProductInput(data);
+    if (error) return showAdminMessage(error, "error");
 
-    await fetch(`${BASE_URL}/products/addproduct`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        product_name: data.product_name,
-        price: data.price,
-        quantity: data.quantity,
-        description: data.description,
-        img: data.img,
-      }),
-    });
+    try {
+      await fetchJsonOrThrow(`${BASE_URL}/products/addproduct`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          product_name: data.product_name.trim(),
+          price: Number(data.price),
+          quantity: Number(data.quantity),
+          description: data.description,
+          img: data.img,
+          categoryId: data.categoryId ? Number(data.categoryId) : null,
+        }),
+      });
+      showAdminMessage("Product added", "success");
+      loadProducts();
+    } catch (error) {
+      showAdminMessage(error.message, "error");
+    }
+  }
 
-    loadProducts();
+  if (type === "category") {
+    const data = await openModal(
+      "Add Category",
+      [
+        { id: "name", label: "Category name", placeholder: "e.g. Sofa" },
+        { id: "description", label: "Description", placeholder: "Short description..." },
+        { id: "imageUrl", label: "Image URL", placeholder: "https://..." },
+        {
+          id: "status",
+          label: "Status",
+          type: "select",
+          value: "ACTIVE",
+          options: [
+            { value: "ACTIVE", label: "ACTIVE" },
+            { value: "INACTIVE", label: "INACTIVE" },
+          ],
+        },
+      ],
+      "Add Category"
+    );
+
+    if (!data) return;
+    const error = validateCategoryInput(data);
+    if (error) return showAdminMessage(error, "error");
+
+    try {
+      await fetchJsonOrThrow(`${CATEGORY_API}/addcategory`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(data),
+      });
+      showAdminMessage("Category added", "success");
+      adminCategories = [];
+      loadCategories();
+    } catch (error) {
+      showAdminMessage(error.message, "error");
+    }
   }
 
   if (type === "user") {

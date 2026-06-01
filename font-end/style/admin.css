@@ -460,3 +460,25 @@ body.admin-page {
         grid-template-columns: 1fr;
     }
 }
+
+
+.admin-message {
+    margin: 16px 40px 0;
+    padding: 12px 16px;
+    border: 1px solid #e0d8cc;
+    background: var(--parchment);
+    color: var(--ink);
+    font-size: 13px;
+}
+
+.admin-message.success {
+    border-color: #9bbf9b;
+    background: #f0f8f0;
+    color: #276327;
+}
+
+.admin-message.error {
+    border-color: #d8a0a0;
+    background: #fff1f1;
+    color: var(--danger);
+}

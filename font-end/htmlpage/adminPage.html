@@ -42,6 +42,23 @@
                 </div>
             </div>
 
+            <!-- CATEGORY -->
+            <div class="nav-group">
+                <div class="nav-item nav-parent" onclick="toggleDropdown('category-menu', this)">
+                    Categories
+                    <span class="chevron">▼</span>
+                </div>
+
+                <div class="nav-dropdown" id="category-menu">
+                    <div class="nav-child" onclick="showSection('category-list')">
+                        • All Categories
+                    </div>
+                    <div class="nav-child" onclick="openAddModal('category')">
+                        • Add Category
+                    </div>
+                </div>
+            </div>
+
             <!-- USER -->
             <div class="nav-group">
                 <div class="nav-item nav-parent" onclick="toggleDropdown('user-menu', this)">
@@ -81,6 +98,11 @@
         <!-- PRODUCT -->
         <section class="section" id="section-product-list">
             <h1>Products</h1>
+        </section>
+
+        <!-- CATEGORY -->
+        <section class="section" id="section-category-list">
+            <h1>Categories</h1>
         </section>
 
         <!-- USER -->
