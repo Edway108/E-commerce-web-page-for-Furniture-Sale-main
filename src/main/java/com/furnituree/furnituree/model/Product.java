@@ -2,31 +2,35 @@ package com.furnituree.furnituree.model;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
+import jakarta.persistence.FetchType;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
+import jakarta.persistence.JoinColumn;
+import jakarta.persistence.ManyToOne;
 
 @Entity
 public class Product {
 
-    // to make it count up automatically
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    // cause the name of this collumn used to be product_name so when i change it
-    // into productName have to do this so that jpa would work with sql to talk to
-    // product_name in data
-    @Column(unique = true, name = "product_name")
+    @Column(unique = true, name = "product_name", nullable = false, length = 120)
     private String productName;
 
-    // all other product entities
     private double price;
     private Long quantity;
+
+    @Column(length = 1000)
     private String description;
+
+    @Column(length = 500)
     private String img;
 
-    // getter and setter
+    @ManyToOne(fetch = FetchType.EAGER)
+    @JoinColumn(name = "category_id")
+    private Category category;
 
     public Long getId() {
         return id;
@@ -52,6 +56,14 @@ public class Product {
         this.price = price;
     }
 
+    public Long getQuantity() {
+        return quantity;
+    }
+
+    public void setQuantity(Long quantity) {
+        this.quantity = quantity;
+    }
+
     public String getDescription() {
         return description;
     }
@@ -68,18 +80,11 @@ public class Product {
         this.img = img;
     }
 
-    /**
-     * @return Long return the quantity
-     */
-    public Long getQuantity() {
-        return quantity;
+    public Category getCategory() {
+        return category;
     }
 
-    /**
-     * @param quantity the quantity to set
-     */
-    public void setQuantity(Long quantity) {
-        this.quantity = quantity;
+    public void setCategory(Category category) {
+        this.category = category;
     }
-
 }
