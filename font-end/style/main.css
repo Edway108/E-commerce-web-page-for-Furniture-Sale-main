@@ -780,3 +780,148 @@
     from { transform: translateX(40px); opacity: 0; }
     to   { transform: translateX(0);    opacity: 1; }
 }
+
+/* Advanced product search, filtering, sorting and pagination */
+.catalog-controls {
+    max-width: 1180px;
+    margin: 24px auto 32px;
+    padding: 24px;
+    background: var(--white);
+    border: 1px solid #e0d8cc;
+    box-shadow: 0 8px 28px rgba(0, 0, 0, 0.05);
+}
+
+.control-grid {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(150px, 1fr));
+    gap: 16px;
+}
+
+.control-field-wide {
+    grid-column: span 2;
+}
+
+.control-field label {
+    display: block;
+    margin-bottom: 6px;
+    font-size: 10px;
+    color: var(--mist);
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+}
+
+.control-field input,
+.control-field select {
+    width: 100%;
+    padding: 11px 12px;
+    border: 1px solid #e0d8cc;
+    background: var(--cream);
+    color: var(--ink);
+    font-family: 'DM Sans', sans-serif;
+    font-size: 13px;
+    outline: none;
+}
+
+.control-field input:focus,
+.control-field select:focus {
+    border-color: var(--walnut);
+}
+
+.control-actions {
+    display: flex;
+    gap: 12px;
+    margin-top: 18px;
+}
+
+.btn-filter,
+.btn-reset,
+.pagination button {
+    border: none;
+    padding: 10px 18px;
+    font-family: 'DM Sans', sans-serif;
+    font-size: 11px;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    cursor: pointer;
+}
+
+.btn-filter {
+    background: var(--walnut);
+    color: var(--cream);
+}
+
+.btn-reset {
+    background: var(--parchment);
+    color: var(--walnut);
+    border: 1px solid #e0d8cc;
+}
+
+.result-stats {
+    margin-top: 16px;
+    color: var(--mist);
+    font-size: 13px;
+}
+
+.pagination {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 8px;
+    margin: 32px 0 12px;
+}
+
+.pagination button {
+    min-width: 42px;
+    background: var(--white);
+    color: var(--walnut);
+    border: 1px solid #e0d8cc;
+}
+
+.pagination button.active {
+    background: var(--walnut);
+    color: var(--cream);
+    border-color: var(--walnut);
+}
+
+.pagination button:disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+}
+
+.card-qty.out {
+    color: var(--danger);
+    font-weight: 600;
+}
+
+.btn-icon:disabled {
+    opacity: 0.45;
+    cursor: not-allowed;
+}
+
+@media (max-width: 900px) {
+    .catalog-controls {
+        margin: 20px 16px 28px;
+    }
+
+    .control-grid {
+        grid-template-columns: repeat(2, minmax(140px, 1fr));
+    }
+
+    .control-field-wide {
+        grid-column: span 2;
+    }
+}
+
+@media (max-width: 560px) {
+    .control-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .control-field-wide {
+        grid-column: span 1;
+    }
+
+    .control-actions {
+        flex-direction: column;
+    }
+}
